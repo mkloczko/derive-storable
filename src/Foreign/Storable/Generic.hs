@@ -25,10 +25,3 @@ import Foreign.Storable.Generic.Tools
 import Foreign.Storable.Generic.Internal (GStorable (..))
 
 
---testData1 :: [(Size, Alignment)]
---testData1 = [(4,4),(3,1),(2,2),(1,1),(4,4)]
-
---testData2 :: [(Size, Alignment)]
---testData2 = [(1,1), (2,2), (2,1),(4,4),(8,2)]
-
-

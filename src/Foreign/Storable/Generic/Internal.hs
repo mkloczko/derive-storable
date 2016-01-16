@@ -108,7 +108,7 @@ instance (GNumberOf' f, GStorable' f, GNumberOf' g, GStorable' g) => GStorable' 
         where n1 = gnumberOf' (undefined :: f a)               -- Number of elements for the left part of the tree.
               n2 = gnumberOf' (undefined :: g a)               -- Number of elements for the right part of the tree
               is_ok = n1+n2 == length offsets                  -- Check if offset number is the same as the number of subelements.
-              error_action = error "GStorable.Internal.gpeekByteOff': Mismatch between field number and offset number"
+              error_action = error "Foreign.Storable.Generic.Internal.gpeekByteOff': Mismatch between field number and offset number"
               (offs1,offs2) = splitAt n1 offsets               -- Offsets for the left and right part of the tree.
               peeker offs = gpeekByteOff' offs ptr offset      -- gpeekByteOff' wrapped to peek into subtrees.
     -- Tree like travelsar for writing the type.
@@ -116,7 +116,7 @@ instance (GNumberOf' f, GStorable' f, GNumberOf' g, GStorable' g) => GStorable' 
         where n1 = gnumberOf' (undefined :: f a)               -- Number of elements for the left part of the tree.
               n2 = gnumberOf' (undefined :: g a)               -- Number of elements for the right part of the tree.
               is_ok = n1+n2 == length offsets                  -- Check if offset number is the same as the number of subelements.
-              error_action = error "GStorable.Internal.gpokeByteOff': Mismatch between field number and offset number"
+              error_action = error "Foreign.Storable.Generic.Internal.gpokeByteOff': Mismatch between field number and offset number"
               (offs1,offs2) = splitAt n1 offsets               -- Offsets for the left and right part of the tree.
               peeker offs z = gpokeByteOff' offs ptr offset z  -- gpokeByteOff' wrapped to peek into the subtree
 
@@ -124,9 +124,9 @@ instance (GNumberOf' f, GStorable' f, GNumberOf' g, GStorable' g) => GStorable' 
 
 instance (GStorable a) => GStorable' (K1 i a) where
     gpeekByteOff' [off1]  ptr offset = K1 <$> gpeekByteOff ptr (off1 + offset) 
-    gpeekByteOff' offsets ptr offset = error "GStorable.Internal.gpeekByteOff': Incorrect number of field offsets for K1"    
+    gpeekByteOff' offsets ptr offset = error "Foreign.Storable.Generic.Internal.gpeekByteOff': Incorrect number of field offsets for K1"    
     gpokeByteOff' [off1]  ptr offset (K1 x) = gpokeByteOff ptr (off1 + offset) x
-    gpokeByteOff' offsets ptr offset (K1 x) = error "GStorable.Internal.gpokeByteOff': Incorrect number of field offsets for K1"
+    gpokeByteOff' offsets ptr offset (K1 x) = error "Foreign.Storable.Generic.Internal.gpokeByteOff': Incorrect number of field offsets for K1"
 
 
 -- | The class uses the default Generic based implementations to 
@@ -190,26 +190,3 @@ instance {-# OVERLAPS #-} (GStorable a) => (Storable a) where
     pokeByteOff = gpokeByteOff
 
 
-main = do
-    ptr <- malloc :: IO (Ptr Int)
-    ptr2 <- malloc :: IO (Ptr (Int, Int))
-    ptr3 <- malloc :: IO (Ptr ((Int16,Int8), Int16))
-    ptr4 <- malloc :: IO (Ptr ((Int,Int), Int))
-    
-    putStrLn =<< show <$> peek ptr
-    putStrLn =<< show <$> peek ptr2
-    putStrLn =<< show <$> peek ptr3
-    poke ptr2 (3, 10)
-    poke ptr3 ((512,32),1337)
-    poke ptr4 ((512,32),1337)
-    
-    putStrLn =<< show <$> peek ptr2
-    
-    putStrLn =<< show <$> alignment <$> peek ptr3
-    putStrLn =<< show <$> sizeOf    <$> peek ptr3
-    putStrLn =<< show <$> peek ptr3
-    
-    putStrLn =<< show <$> alignment <$> peek ptr4
-    putStrLn =<< show <$> sizeOf    <$> peek ptr4
-    putStrLn =<< show <$> peek ptr4
-    putStrLn "Done"
