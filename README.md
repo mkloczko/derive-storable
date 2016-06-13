@@ -11,8 +11,8 @@ The `generic-storable` package allows you to automatically generate Storable ins
 Here's an example:
 
 
-```
-{-#LANGUAGE DeriveGenerics#-}
+```haskell
+{-# LANGUAGE DeriveGeneric #-}
 
 import Foreign.Storable
 import Foreign.Storable.Generic
@@ -33,8 +33,8 @@ updatePosition ptr pos = poke ptr pos
 
 
 main = do
-    let val = Position (0.0,10.0)
-    ptr <- malloc :: IO (Ptr Position)	    
+    let val = Position 0.0 10.0
+    ptr <- malloc :: IO (Ptr Position)      
     putStrLn "Created a ptr with value of"
     putStrLn =<< show <$> peek ptr
     updatePosition ptr val
