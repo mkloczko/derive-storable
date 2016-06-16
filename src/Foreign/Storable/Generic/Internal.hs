@@ -108,7 +108,7 @@ instance (GNumberOf' f, GStorable' f, GNumberOf' g, GStorable' g) => GStorable' 
         where n1 = gnumberOf' (undefined :: f a)               -- Number of elements for the left part of the tree.
               n2 = gnumberOf' (undefined :: g a)               -- Number of elements for the right part of the tree
               is_ok = n1+n2 == length offsets                  -- Check if offset number is the same as the number of subelements.
-              error_action = error "Foreign.Storable.Generic.Internal.gpeekByteOff': Mismatch between field number and offset number"
+              error_action = error "Foreign.Storable.Generic.Internal.gpeekByteOff': Mismatch between number of fields and number of offsets"
               (offs1,offs2) = splitAt n1 offsets               -- Offsets for the left and right part of the tree.
               peeker offs = gpeekByteOff' offs ptr offset      -- gpeekByteOff' wrapped to peek into subtrees.
     -- Tree like travelsar for writing the type.
@@ -116,7 +116,7 @@ instance (GNumberOf' f, GStorable' f, GNumberOf' g, GStorable' g) => GStorable' 
         where n1 = gnumberOf' (undefined :: f a)               -- Number of elements for the left part of the tree.
               n2 = gnumberOf' (undefined :: g a)               -- Number of elements for the right part of the tree.
               is_ok = n1+n2 == length offsets                  -- Check if offset number is the same as the number of subelements.
-              error_action = error "Foreign.Storable.Generic.Internal.gpokeByteOff': Mismatch between field number and offset number"
+              error_action = error "Foreign.Storable.Generic.Internal.gpokeByteOff': Mismatch between number of fields and number of offsets"
               (offs1,offs2) = splitAt n1 offsets               -- Offsets for the left and right part of the tree.
               peeker offs z = gpokeByteOff' offs ptr offset z  -- gpokeByteOff' wrapped to peek into the subtree
 
