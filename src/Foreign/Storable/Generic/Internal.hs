@@ -173,7 +173,16 @@ class GStorable a where
               alignments = glistAlignment' (from (undefined :: a))
               g_align    = maximum alignments -- Using galigment here generated bugs.
               offsets    = calcOffsets g_align $ zip sizes alignments
-
+    -- | Get the offsets for the elements in the data type.
+    goffsets :: a     -- ^ The data type
+             -> [Int] -- ^ The offsets
+    default goffsets :: (Generic a, GStorable' (Rep a), GListSizeOf' (Rep a), GListAlignment' (Rep a))
+                     => a -> [Int]
+    goffsets _ = offsets 		     
+        where sizes      = glistSizeOf'    (from (undefined :: a))
+              alignments = glistAlignment' (from (undefined :: a))
+              g_align    = maximum alignments -- Using galigment here generated bugs.
+              offsets    = calcOffsets g_align $ zip sizes alignments
 
 ------Association to Storable class-------
 
@@ -182,7 +191,7 @@ instance {-# OVERLAPS #-} (Storable a) => (GStorable a) where
     galignment   = alignment
     gpeekByteOff = peekByteOff
     gpokeByteOff = pokeByteOff
-
+    goffsets   _ = [0] 
 instance {-# OVERLAPS #-} (GStorable a) => (Storable a) where
     sizeOf      = gsizeOf
     alignment   = galignment
