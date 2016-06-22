@@ -5,7 +5,7 @@
 {-#LANGUAGE UndecidableInstances #-}
 
 
-module Foreign.Storable.Generic (GStorable (..)) where
+module Foreign.Storable.Generic (GStorable (..), Storable(..)) where
 
 
 
