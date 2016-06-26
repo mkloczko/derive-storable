@@ -8,7 +8,7 @@
 
 module Foreign.Storable.Generic.Internal where
 
-import Generics.Deriving
+import GHC.Generics
 import Foreign.Ptr
 import Foreign.Storable
 import Foreign.Marshal.Alloc
@@ -151,20 +151,11 @@ class GStorable a where
               alignments = glistAlignment' (from (undefined :: a))
               g_align    = maximum alignments -- Using galigment here generated bugs.
               offsets    = calcOffsets g_align $ zip sizes alignments
-    -- | Get the offsets for the elements in the data type.
-    goffsets :: a     -- ^ The data type
-             -> [Int] -- ^ The offsets
-    default goffsets :: (Generic a, GStorable' (Rep a))
-                     => a -> [Int]
-    goffsets _ = offsets   
-        where sizes      = glistSizeOf'    (from (undefined :: a))
-              alignments = glistAlignment' (from (undefined :: a))
-              g_align    = maximum alignments -- Using galigment here generated bugs.
-              offsets    = calcOffsets g_align $ zip sizes alignments
+
 
 ------Association to Storable class-------
 
-instance (Storable a) => (GStorable a) where
+instance {-#OVERLAPS #-}(Storable a) => (GStorable a) where
     {-# INLINE gsizeOf #-}
     gsizeOf      = trace "GStorable uses Storable" sizeOf
     {-# INLINE galignment #-}
@@ -173,8 +164,6 @@ instance (Storable a) => (GStorable a) where
     gpeekByteOff = peekByteOff
     {-# INLINE gpokeByteOff #-}
     gpokeByteOff = pokeByteOff
-    {-# INLINE goffsets #-}
-    goffsets   _ = [0] 
 
 
 instance {-# OVERLAPS #-} (GStorable a) => (Storable a) where
