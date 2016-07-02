@@ -16,8 +16,7 @@ class GStorableMeta a where
     goffsets _ = offsets   
         where sizes      = glistSizeOf'    (from (undefined :: a))
               alignments = glistAlignment' (from (undefined :: a))
-              g_align    = maximum alignments -- Using galigment here generated bugs.
-              offsets    = calcOffsets g_align $ zip sizes alignments
+              offsets    = calcOffsets $ zip sizes alignments
     -- | Get the fields' alignments.
     gsizes   :: a     -- ^ The data type
              -> [Int] -- ^ Fields' sizes

@@ -26,13 +26,13 @@ class GStorable' f where
     -- | Read the element at a given offset. Additional information about the offests 
     -- of the subfields are needed.
     gpeekByteOff' :: [Int]    -- ^ List of fields' offsets for the type/struct. 
-                  -> Ptr a    -- ^ The pointer to the type/struct.
+                  -> Ptr b    -- ^ The pointer to the type/struct.
                   -> Int      -- ^ Global offset.
                   -> IO (f a) -- ^ The result, wrapped in GHC.Generic metadata.
     -- | Write the element at a given offset. Additional information about the offests 
     -- of the subfields are needed.
     gpokeByteOff' :: [Int]  -- ^ List of fields' offsets for the type/struct.
-                  -> Ptr a  -- ^ The pointer to the type/struct.
+                  -> Ptr b  -- ^ The pointer to the type/struct.
                   -> Int    -- ^ Global offset.
                   -> (f a)  -- ^ The element to write, wrapped in GHC.Generic metadata.
                   -> IO ()
@@ -45,9 +45,10 @@ class GStorable' f where
     glistSizeOf' :: f a   -- ^ GHC.Generic information about a given type/struct. 
                  -> [Int] -- ^ List of sizes.
 
-    -- | Calculates the alignments of type'struct's fields.
+    -- | Calculates the alignments of type's/struct's fields.
     glistAlignment' :: f a   -- ^ GHC.Generic information about a given type/struct.
                     -> [Int] -- ^ List of alignments.
+
 
 instance (GStorable' f) => GStorable' (M1 i t f) where
     -- Wrap the peeked value in metadata.
@@ -56,9 +57,9 @@ instance (GStorable' f) => GStorable' (M1 i t f) where
     gpokeByteOff' offsets ptr offset (M1 x) = gpokeByteOff' offsets ptr offset x 
     
 
-    gnumberOf' _ = trace "M1 numberOf" $ gnumberOf' (undefined :: f a)
-    glistSizeOf' _ = trace "M1 listSizeOf" $ glistSizeOf' (undefined :: f a)
-    glistAlignment' _ = trace "M1 alignment" $ glistAlignment' (undefined :: f a)
+    gnumberOf' (M1 v) = gnumberOf' v
+    glistSizeOf' _ = glistSizeOf' (undefined :: f p)
+    glistAlignment' _ = glistAlignment' (undefined :: f p)
 
 ------------------------------------------
 --   The important part of the code!    --
@@ -116,10 +117,9 @@ class GStorable a where
             -> Int -- ^ Size.
     default gsizeOf :: (Generic a, GStorable' (Rep a))
                     => a -> Int
-    gsizeOf _ = trace "GSizeOf!" $ calcSize g_align $ zip sizes alignments 
-        where sizes      = glistSizeOf'    (from (undefined :: a))  
+    gsizeOf _ = calcSize $ zip sizes alignments 
+        where sizes      = glistSizeOf'    (from (undefined :: a))
               alignments = glistAlignment' (from (undefined :: a))
-              g_align    = maximum alignments --Using galignemnt here generated bugs.
     -- | Calculate the alignment of the type.
     galignment :: a   -- ^ Element of a given type. Can be undefined  
                -> Int -- ^ Alignment.
@@ -137,8 +137,7 @@ class GStorable a where
     gpeekByteOff ptr offset = to <$> gpeekByteOff' offsets ptr offset
         where sizes      = glistSizeOf'    (from (undefined :: a))
               alignments = glistAlignment' (from (undefined :: a))
-              g_align    = maximum alignments -- Using galigment here generated bugs.
-              offsets    = calcOffsets g_align $ zip sizes alignments
+              offsets    = calcOffsets $ zip sizes alignments
     -- | Write the variable to a pointer. 
     gpokeByteOff :: Ptr b -- ^ Pointer to the variable. 
                  -> Int   -- ^ Offset.
@@ -149,26 +148,25 @@ class GStorable a where
     gpokeByteOff ptr offset x = gpokeByteOff' offsets ptr offset (from x)
         where sizes      = glistSizeOf'    (from (undefined :: a))
               alignments = glistAlignment' (from (undefined :: a))
-              g_align    = maximum alignments -- Using galigment here generated bugs.
-              offsets    = calcOffsets g_align $ zip sizes alignments
+              offsets    = calcOffsets $ zip sizes alignments
 
 
 ------Association to Storable class-------
 
-instance {-#OVERLAPS #-}(Storable a) => (GStorable a) where
-    {-# INLINE gsizeOf #-}
-    gsizeOf      = trace "GStorable uses Storable" sizeOf
-    {-# INLINE galignment #-}
-    galignment   = alignment
-    {-# INLINE gpeekByteOff #-}
-    gpeekByteOff = peekByteOff
-    {-# INLINE gpokeByteOff #-}
-    gpokeByteOff = pokeByteOff
+-- instance (Storable a) => (GStorable a) where
+--     {-# INLINE gsizeOf #-}
+--     gsizeOf      = sizeOf
+--     {-# INLINE galignment #-}
+--     galignment   = alignment
+--     {-# INLINE gpeekByteOff #-}
+--     gpeekByteOff = peekByteOff
+--     {-# INLINE gpokeByteOff #-}
+--     gpokeByteOff = pokeByteOff
 
 
 instance {-# OVERLAPS #-} (GStorable a) => (Storable a) where
     {-# INLINE sizeOf #-}
-    sizeOf      = trace "Storable uses GStorable" gsizeOf
+    sizeOf      = gsizeOf
     {-# INLINE alignment #-}
     alignment   = galignment
     {-# INLINE peekByteOff #-}
