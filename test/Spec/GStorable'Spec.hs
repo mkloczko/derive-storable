@@ -24,11 +24,6 @@ spec = do
                 let test1 val = length (listOfSizes val) `shouldSatisfy` (==1)
                 test1 $ wrapType basic_type
                 )
-        it "Length >= 1 for product types" $ do
-            property (\(basic_types :: NonEmptyList BasicType) -> do
-                let test1 val = length (listOfSizes val) `shouldSatisfy` (>=1)
-                test1 $ wrapType $ toGenericType $ getNonEmpty basic_types
-                )
         it "glistSizeOf' a == [gsizeOf a_field1, gsizeOf a_field2, ...]" $ do
             property (\(basic_types :: NonEmptyList BasicType) -> do
                 let gen_type = toGenericType $ getNonEmpty basic_types
@@ -40,11 +35,6 @@ spec = do
                 let test1 val = length (listOfAlignments val) `shouldSatisfy` (==1)
                 test1 $ wrapType basic_type
                 )
-        it "Length >= 1 for product types" $ do
-            property (\(basic_types :: NonEmptyList BasicType) -> do
-                let test1 val = length (listOfAlignments val) `shouldSatisfy` (>=1)
-                test1 $ wrapType $ toGenericType $ getNonEmpty basic_types
-                )
         it "glistAlignment' a == [galignment a_field1, galignment a_field2, ...]" $ do
             property (\(basic_types :: NonEmptyList BasicType) -> do
                 let gen_type = toGenericType $ getNonEmpty basic_types
@@ -54,8 +44,7 @@ spec = do
         it "Is equal to number of fields" $ do 
             property (\(basic_types :: NonEmptyList BasicType) -> do
                 let gen_type          = toGenericType $ getNonEmpty basic_types
-                    getNo (Product p) = gnumberOf' p
-                    getNo (Part    p) = gnumberOf' p
+                    getNo (GenericType p) = gnumberOf' p
                 getNo gen_type `shouldBe` length (getNonEmpty basic_types) 
                 )
     describe "gpeekByteOff' " $ do

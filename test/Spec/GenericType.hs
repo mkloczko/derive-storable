@@ -34,14 +34,12 @@ instance TestType Int
 instance TestType Char
 
 
--- | Temporary inside wrappers
--- | The wrappable type class. Replicates the Generic
--- behaviour.
+-- | The wrappable type class. Wraps the type in generics.
 class (Show a) => Wrappable a where
     wrapType :: a -> GenericType
 
 
--- Now this is funny... I'm basicly reimplementing the GStorable behaviour.
+-- This actually reimplements the GStorable behaviour.
 instance (GStorable' f, GStorable' g) => GStorable ((:*:) f g p) where
     gsizeOf _ = calcSize $ zip sizes alignments
         where sizes      = glistSizeOf' (undefined :: f p) ++ glistSizeOf' (undefined :: g p)
@@ -88,9 +86,8 @@ instance GStorable BasicType where
 -- | Wraps the basic type with 'M1' and 'K1' type constructors. 
 -- The result is usable by the testing algorithms.
 instance Wrappable BasicType where
-    wrapType (BasicType val) = Part $ M1 $ K1 val
+    wrapType (BasicType val) = GenericType $ M1 $ K1 val
 
-data MyPhantom
 -- Some tricks for generics:
 instance Arbitrary c     => Arbitrary (K1 i c p) where
     arbitrary = K1 <$> arbitrary
@@ -102,95 +99,37 @@ instance (Arbitrary (f p), Arbitrary (g p)) => Arbitrary ((:*:) f g p) where
 
 -- | Constains generic representations of arbitrary data-types.
 -- The Show constraint is used so we can print out the badly working cases.
--- The last type variable of K1, M1 and :*: had to be constant so that :*: operator will work.
-data GenericType where
-   -- | Represents parts of a type.
-   Part    :: (Eq (f MyPhantom), Arbitrary (f MyPhantom), GStorable' f, Show (f MyPhantom)) => M1 i c f MyPhantom -> GenericType
-   -- | Represents product of types. 
-   Product :: (GStorable' f, GStorable' g, Show ((:*:) f g MyPhantom),Arbitrary ((:*:) f g MyPhantom), Eq ((:*:) f g MyPhantom)  ) => (:*:) f g MyPhantom -> GenericType
-   -- | For expressions that were constructed using 'M1'.
-   Full    :: (Eq (f MyPhantom), Arbitrary (f MyPhantom), GStorable' f, Show (f MyPhantom)) => M1 i c f MyPhantom -> GenericType
+-- The Eq and Arbitrary one are for generating different values for the same types.
+data GenericType p where
+   GenericType  :: (Eq (f p), Arbitrary (f p), GStorable' f, Show (f p)) => f p -> GenericType p
 
-instance Arbitrary GenericType where
-    arbitrary = do
-       non_empty <- arbitrary :: (Gen (NonEmptyList BasicType)) 
-       return $ wrapType $ toGenericType $ getNonEmpty non_empty
+instance Arbitrary (GenericType p) where
+    arbitrary = nestedType 1
 
-instance Show GenericType where
-    show (Full    val) = show val
-    show (Part    val) = show val
-    show (Product val) = show val
+instance Show (GenericType p) where
+    show (GenericType    val) = show val
 
--- | Wraps the generic type with 'M1' and 'K1' type constructors
-instance Wrappable GenericType where
-    -- | Full gets lift to Part.
-    wrapType  f@(Full    val) = f
-    -- | Part stays the same.
-    wrapType    (Part    val) = Full $ M1 $ M1 $ val
-    -- | Products obtained throught the :*: type constructor are
-    -- wrapped using 'K1' and 'M1'
-    wrapType    (Product val) = Part $ M1 $ K1 val
+instance Wrappable (GenericType p) where
+    wrapType    (GenericType  val) = GenericType $ M1 $ M1 $ val
 
-data NestedType (from :: Nat) (to :: Nat) = NestedType GenericType
+-- | For generating nested types
+nestedType :: Int -> Gen (GenericType p)
+nestedType n 
+    | n <  0    = error "GenericType.nestedType: n is less than 0"
+    | n == 0    = wrapType <$> (arbitrary :: Gen (BasicType p))
+    | otherwise = wrapType <$> toGenericType <$> (listOf1 $ nestedType (n-1))
+
+-- | For generating nested types with components from levels below.
+nestedToType :: Int -> Gen (GenericType p)
+nestedToType n = wrapType <$> toGenericType <$> mapM nestedType [0..n] 
 
 -- | Uses the :*: operator to construct a representation of a product type.
-typeProduct :: GenericType -> GenericType -> GenericType
-typeProduct (Part    val1) (Part    val2) = Product $ val1 :*: val2
-typeProduct (Product val1) (Product val2) = Product $ val1 :*: val2
-typeProduct (Product val1) (Part    val2) = Product $ val1 :*: val2
-typeProduct (Part    val1) (Product val2) = Product $ val1 :*: val2 
-typeProduct (Full    val1) (Full    val2) = Product $ val1 :*: val2
-typeProduct (Full    val1) (Product val2) = Product $ val1 :*: val2
-typeProduct (Product val1) (Full    val2) = Product $ val1 :*: val2
-typeProduct (Full    val1) (Part    val2) = Product $ val1 :*: val2
-typeProduct (Part    val1) (Full    val2) = Product $ val1 :*: val2
--- typeProduc  (Final   val1) (Final   val2) = Product $ val1 :*: val2
--- | Primitive test case.
-testTypes :: [BasicType]
-testTypes = [BasicType (3 :: Int), BasicType (14 :: Int), BasicType ('a' :: Char), BasicType (5 :: Int), BasicType ('b' :: Char)] 
+typeProduct :: GenericType p -> GenericType p -> GenericType p
+typeProduct (GenericType val1) (GenericType val2) = GenericType $ val1 :*: val2
 
 -- | Wraps the ['BasicType'] and ['GenericType'] lists as needed.
-toGenericType :: (Wrappable a) => [a] -> GenericType
+toGenericType :: [GenericType] -> GenericType
 toGenericType []  = error "toGenericType requires at least one type"
-toGenericType [v] = wrapType v
-toGenericType types = foldl1 typeProduct $ map wrapType types
-
--- | Obtains the list of sizes from the generic representation
-listOfSizes :: GenericType -> [Int]
-listOfSizes (Full   m1) = glistSizeOf' m1
-listOfSizes (Part   m1) = glistSizeOf' m1
-listOfSizes (Product p) = glistSizeOf' p
-
--- | Obtains the list of alignments from the generic representation.
-listOfAlignments :: GenericType -> [Int]
-listOfAlignments (Full   m1) = glistAlignment' m1
-listOfAlignments (Part   m1) = glistAlignment' m1
-listOfAlignments (Product p) = glistAlignment' p
-
-listOffsets :: GenericType -> [Int]
-listOffsets gen_type  = calcOffsets $ zip sizes alignments 
-    where sizes       = listOfSizes gen_type
-          alignments  = listOfAlignments gen_type 
-
-getSize :: GenericType -> Int
-getSize gen_type = calcSize $ zip sizes alignments
-   where sizes      = listOfSizes gen_type
-         alignments = listOfAlignments gen_type
-        
-testPeekByteOff :: GenericType -> [Int] -> Ptr b -> Int -> IO GenericType
-testPeekByteOff gen_type offsets ptr offset = case gen_type of
-        Part    (v :: M1    i c f  MyPhantom) -> Part    <$> (gpeekByteOff' offsets ptr offset :: IO (M1    i c f MyPhantom)) 
-        Full    (v :: M1    i c f  MyPhantom) -> Full    <$> (gpeekByteOff' offsets ptr offset :: IO (M1    i c f MyPhantom)) 
-        Product (v :: (:*:) f g    MyPhantom) -> Product <$> (gpeekByteOff' offsets ptr offset :: IO ((:*:) f g   MyPhantom))
-
-testPeekByteOffEqual :: GenericType -> [Int] -> Ptr b -> Int -> IO Bool
-testPeekByteOffEqual gen_type offsets ptr offset = case gen_type of
-        Part    (v :: M1    i c f  MyPhantom) -> (v==) <$> (gpeekByteOff' offsets ptr offset :: IO (M1    i c f MyPhantom)) 
-        Full    (v :: M1    i c f  MyPhantom) -> (v==) <$> (gpeekByteOff' offsets ptr offset :: IO (M1    i c f MyPhantom)) 
-        Product (v :: (:*:) f g    MyPhantom) -> (v==) <$> (gpeekByteOff' offsets ptr offset :: IO ((:*:) f g   MyPhantom))
-
-testPokeByteOff :: [Int] -> Ptr b -> Int -> GenericType -> IO () 
-testPokeByteOff offsets ptr offset (Part    val) = gpokeByteOff' offsets ptr offset val
-testPokeByteOff offsets ptr offset (Full    val) = gpokeByteOff' offsets ptr offset val
-testPokeByteOff offsets ptr offset (Product val) = gpokeByteOff' offsets ptr offset val
+toGenericType [v] = v
+toGenericType types = foldl1 typeProduct types
 

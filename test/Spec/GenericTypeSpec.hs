@@ -89,19 +89,3 @@ spec = do
                 let gen_rep = unM1 $ unM1 $ from gstor
                 galignment gstor `shouldBe` galignment gen_rep
                 )
-    describe "listOfSizes" $ do
-        it "listOfSizes val == glistSizeOf' ((Full | Part | Product) rep)" $ do
-            property (\gen_type -> do
-                let test1 (Full    rep) = glistSizeOf' rep
-                    test1 (Part    rep) = glistSizeOf' rep
-                    test1 (Product rep) = glistSizeOf' rep
-                listOfSizes gen_type `shouldBe` test1 gen_type
-                )
-    describe "listOfAlignments" $ do
-        it "listOfAlignments val == glistAlignment' ((Full | Part | Product) rep)" $ do
-            property (\gen_type -> do
-                let test1 (Full    rep) = glistAlignment' rep
-                    test1 (Part    rep) = glistAlignment' rep
-                    test1 (Product rep) = glistAlignment' rep
-                listOfAlignments gen_type `shouldBe` test1 gen_type
-                )
