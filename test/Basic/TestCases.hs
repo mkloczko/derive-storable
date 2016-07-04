@@ -2,9 +2,12 @@
 {-# LANGUAGE CApiFFI #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
-module Main where
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
-import GHC.Generics (Generic)
+module TestCases where
+
+import GHC.Generics (Generic, Rep, from)
 import Foreign.C.Types
 import Foreign.Storable
 import Foreign.Storable.Generic
@@ -13,7 +16,8 @@ import Foreign.ForeignPtr (ForeignPtr, mallocForeignPtr)
 import Foreign.Marshal.Alloc (malloc, free)
 import Foreign.Marshal.Array (mallocArray, pokeArray)
 
-
+import Foreign.Storable.Generic.Tools
+import Foreign.Storable.Generic.Internal
 import Data.Int
 import Control.Monad (sequence, liftM)
 import System.Exit
@@ -35,9 +39,9 @@ class (Storable a) => Checkable a where
   -- | Checks whether the offsets are the same
   checkOffsets :: a -> Ptr Int16 -> IO Bool 
   -- | Checks whether the size is the same
-  checkSize    :: a -> IO Bool              
+  getSize    :: a -> IO Int              
   -- | Checks whether the alignment is the same
-  checkAlignment :: a-> IO Bool              
+  getAlignment :: a-> IO Int              
   
   new          :: a -> IO (Ptr a)
 
@@ -48,43 +52,18 @@ newStorable val = do
   poke ptr val
   return ptr
 
-
-data Check = Check {
-  fields_ok :: Bool,
-  offsets_ok :: Bool,
-  size_ok :: Bool,
-  alignment_ok :: Bool
-} deriving (Show)
-
-checkOk :: Check -> Bool
-checkOk (Check f o s a) = and [f,o,s,a]
-
-checkType :: (Storable a, Checkable a, Arbitrary a) => a -> IO Check
-checkType val = do
-  -- Offsets
-  let offsets = map fromIntegral $ [1,2,3]
-  offsets_ptr <- mallocArray $ length offsets
-  pokeArray offsets_ptr offsets 
- 
-  -- Fields
-  c_ptr  <- new val
-  hs_ptr <- newStorable val
-  
-  -- Tests
-  field_test  <- checkFields  c_ptr hs_ptr
-  offset_test <- checkOffsets val  offsets_ptr
-  size_test   <- checkSize val   
-  alignment_test <- checkAlignment val
-  return $ Check field_test offset_test size_test alignment_test
-
+goffsets :: (GStorable' (Rep a), GStorable a, Generic a) => a -> [Int16]
+goffsets v = map fromIntegral $ calcOffsets $ zip sizes alignments 
+    where sizes = glistSizeOf' (from v)
+          alignments = glistAlignment' (from v)
 data C1 = C1 Int32 Int32
     deriving (Show, Eq, Generic, GStorable)
 
 instance Checkable C1 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC1 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC1 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC1
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC1
+    getSize        a          = fromIntegral <$> getSizeC1
+    getAlignment   a          = fromIntegral <$> getAlignmentC1
     new (C1 a b) = do
         ptr <- newC1 a b
         return ptr
@@ -104,8 +83,8 @@ data C2 = C2 Int32 Int16 Int8
 instance Checkable C2 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC2 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC2 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC2
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC2
+    getSize        a          = fromIntegral <$> getSizeC2
+    getAlignment   a          = fromIntegral <$> getAlignmentC2
     new (C2 a b c) = do
         ptr <- newC2 a b c
         return ptr
@@ -125,8 +104,8 @@ data C3 = C3 Int32 Int8 Int16
 instance Checkable C3 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC3 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC3 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC3
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC3
+    getSize        a          = fromIntegral <$> getSizeC3
+    getAlignment   a          = fromIntegral <$> getAlignmentC3
     new (C3 a b c) = do
         ptr <- newC3 a b c
         return ptr
@@ -146,8 +125,8 @@ data C4 = C4 Int32 Int8 Int8
 instance Checkable C4 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC4 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC4 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC4
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC4
+    getSize        a          = fromIntegral <$> getSizeC4
+    getAlignment   a          = fromIntegral <$> getAlignmentC4
     new (C4 a b c) = do
         ptr <- newC4 a b c
         return ptr
@@ -167,8 +146,8 @@ data C5 = C5 Int32 Int16 Int8 Int8 Int8
 instance Checkable C5 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC5 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC5 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC5
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC5
+    getSize        a          = fromIntegral <$> getSizeC5
+    getAlignment   a          = fromIntegral <$> getAlignmentC5
     new (C5 a b c d e) = do
         ptr <- newC5 a b c d e
         return ptr
@@ -188,8 +167,8 @@ data C6 = C6 Int64 Int8 Int64
 instance Checkable C6 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC6 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC6 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC6
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC6
+    getSize        a          = fromIntegral <$> getSizeC6
+    getAlignment   a          = fromIntegral <$> getAlignmentC6
     new (C6 a b c) = do
         ptr <- newC6 a b c
         return ptr
@@ -209,8 +188,8 @@ data C7 = C7 C1 Int32
 instance Checkable C7 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC7 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC7 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC7
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC7
+    getSize        a          = fromIntegral <$> getSizeC7
+    getAlignment   a          = fromIntegral <$> getAlignmentC7
     new (C7 a b) = do
         ptr_a <- newStorable a
         ptr <- newC7 ptr_a b
@@ -232,8 +211,8 @@ data C8 = C8 C2 Int8 C4
 instance Checkable C8 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC8 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC8 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC8
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC8
+    getSize        a          = fromIntegral <$> getSizeC8
+    getAlignment   a          = fromIntegral <$> getAlignmentC8
     new (C8 a b c) = do
         ptr_a <- newStorable a
         ptr_c <- newStorable c
@@ -257,8 +236,8 @@ data C9 = C9 C5 Int8 Int8 Int8
 instance Checkable C9 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC9 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC9 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC9
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC9
+    getSize        a          = fromIntegral <$> getSizeC9
+    getAlignment   a          = fromIntegral <$> getAlignmentC9
     new (C9 a b c d) = do
         ptr_a <- newStorable a
         ptr <- newC9 ptr_a b c d
@@ -280,8 +259,8 @@ data C10 = C10 C8 Int64 C1
 instance Checkable C10 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC10 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC10 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC10
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC10
+    getSize        a          = fromIntegral <$> getSizeC10
+    getAlignment   a          = fromIntegral <$> getAlignmentC10
     new (C10 a b c) = do
         ptr_a <- newStorable a
         ptr_c <- newStorable c
@@ -305,8 +284,8 @@ data C11 = C11 C10 C10
 instance Checkable C11 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC11 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC11 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC11
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC11
+    getSize        a          = fromIntegral <$> getSizeC11
+    getAlignment   a          = fromIntegral <$> getAlignmentC11
     new (C11 a b) = do
         ptr_a <- newStorable a
         ptr_b <- newStorable b
@@ -330,8 +309,8 @@ data C12 = C12 Int64 Int64 Int64 Int64
 instance Checkable C12 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC12 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC12 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC12
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC12
+    getSize        a          = fromIntegral <$> getSizeC12
+    getAlignment   a          = fromIntegral <$> getAlignmentC12
     new (C12 a b c d) = do
         ptr <- newC12 a b c d
         return ptr
@@ -351,8 +330,8 @@ data C13 = C13 C12 C12 C12 C12
 instance Checkable C13 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC13 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC13 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC13
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC13
+    getSize        a          = fromIntegral <$> getSizeC13
+    getAlignment   a          = fromIntegral <$> getAlignmentC13
     new (C13 a b c d) = do
         ptr_a <- newStorable a
         ptr_b <- newStorable b
@@ -380,8 +359,8 @@ data C14 = C14 C13 C13 C13 C13 Int8
 instance Checkable C14 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC14 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC14 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC14
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC14
+    getSize        a          = fromIntegral <$> getSizeC14
+    getAlignment   a          = fromIntegral <$> getAlignmentC14
     new (C14 a b c d e) = do
         ptr_a <- newStorable a
         ptr_b <- newStorable b
@@ -409,8 +388,8 @@ data C15 = C15 C12 C14
 instance Checkable C15 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC15 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC15 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC15
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC15
+    getSize        a          = fromIntegral <$> getSizeC15
+    getAlignment   a          = fromIntegral <$> getAlignmentC15
     new (C15 a b) = do
         ptr_a <- newStorable a
         ptr_b <- newStorable b
@@ -434,8 +413,8 @@ data C16 = C16 C10 C15 C7
 instance Checkable C16 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC16 ptr1 ptr2
     checkOffsets   _    offs = (==1) <$> checkOffsetsC16 offs
-    checkSize           a    = (==) (fromIntegral $ sizeOf    a) <$> getSizeC16
-    checkAlignment      a    = (==) (fromIntegral $ alignment a) <$> getAlignmentC16
+    getSize        a          = fromIntegral <$> getSizeC16
+    getAlignment   a          = fromIntegral <$> getAlignmentC16
     new (C16 a b c) = do
         ptr_a <- newStorable a
         ptr_b <- newStorable b
@@ -455,6 +434,3 @@ foreign import ccall checkOffsetsC16 :: Ptr Int16 -> IO Int8
 foreign import ccall getSizeC16 :: IO Int16
 foreign import ccall getAlignmentC16 :: IO Int16
 
-
-
-main = return ()

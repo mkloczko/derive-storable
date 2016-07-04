@@ -66,19 +66,19 @@ library
   default-language:    Haskell2010
  
 
-test-suite Basic
+test-suite c_alignment
   type:                exitcode-stdio-1.0
   
-  hs-source-dirs:      test, test/cbits
-  c-sources:           test/cbits/TestCases.c 
-  main-is:             TestCases.hs
+  hs-source-dirs:      src, test/Basic, test/Basic/cbits
+  c-sources:           test/Basic/cbits/TestCases.c 
+  main-is:             MemoryCSpec.hs
   build-depends:       base >= 4.8 && <4.10, hspec == 2.2.* ,QuickCheck == 2.8.*, generic-storable
   
   default-language:    Haskell2010
 
-test-suite Spec
+test-suite spec
   type:                exitcode-stdio-1.0
-  hs-source-dirs:      src/ test/Spec/
+  hs-source-dirs:      src/ test/Spec test/Basic test/GenericRep/
   Main-is:             Spec.hs
   build-depends:       base >= 4.8 && < 4.10, generic-storable, hspec == 2.2.*, QuickCheck == 2.8.*
 

@@ -1,4 +1,4 @@
-module ToolsSpec where
+module Foreign.Storable.Generic.ToolsSpec where
 
 import Test.Hspec
 

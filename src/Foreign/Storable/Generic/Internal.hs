@@ -108,6 +108,47 @@ instance (GStorable a) => GStorable' (K1 i a) where
     -- the constructed type in a list.
     glistAlignment' _ = [galignment (undefined :: a)]  
 
+
+-- These functions were moved outside GStorable type class.
+-- They take generic representations as input.
+
+-- | Calculates the size of generic data-type.
+internalSizeOf :: forall f p. (GStorable' f)
+               => f p  -- ^ Generic representation 
+               -> Int  -- ^ Resulting size
+internalSizeOf _  = calcSize $ zip sizes aligns
+    where sizes  = glistSizeOf'    (undefined :: f p)
+          aligns = glistAlignment' (undefined :: f p)
+
+-- | Calculates the alignment of generic data-type.
+internalAlignment :: forall f p. (GStorable' f) 
+                  => f p -- ^ Generic representation
+                  -> Int -- ^ Resulting alignment
+internalAlignment  _  = maximum aligns
+    where aligns = glistAlignment' (undefined :: f p)
+
+-- | View the variable under a pointer, with offset.
+internalPeekByteOff :: forall f p b. (GStorable' f) 
+                    => Ptr b    -- ^ Pointer to peek 
+                    -> Int      -- ^ Offset 
+                    -> IO (f p) -- ^ Resulting generic representation
+internalPeekByteOff ptr off  = gpeekByteOff' offsets ptr off
+    where sizes   = glistSizeOf'    (undefined :: f p)
+          aligns  = glistAlignment' (undefined :: f p)
+          offsets = calcOffsets $ zip sizes aligns
+
+-- | Write the variable under the pointer, with offset.
+internalPokeByteOff :: forall f p b. (GStorable' f) 
+                    => Ptr b -- ^ Pointer to write to
+                    -> Int   -- ^ Offset 
+                    -> f p   -- ^ Written generic representation 
+                    -> IO () 
+internalPokeByteOff ptr off rep = gpokeByteOff' offsets ptr off rep
+    where sizes   = glistSizeOf'    (undefined :: f p)
+          aligns  = glistAlignment' (undefined :: f p)
+          offsets = calcOffsets $ zip sizes aligns
+
+
 -- | The class uses the default Generic based implementations to 
 -- provide Storable instances for types made from primitive types.
 -- Does not work on Algebraic Data Types with more than one constructor.
@@ -117,16 +158,14 @@ class GStorable a where
             -> Int -- ^ Size.
     default gsizeOf :: (Generic a, GStorable' (Rep a))
                     => a -> Int
-    gsizeOf _ = calcSize $ zip sizes alignments 
-        where sizes      = glistSizeOf'    (from (undefined :: a))
-              alignments = glistAlignment' (from (undefined :: a))
+    gsizeOf _ = internalSizeOf (undefined :: Rep a p) 
+    
     -- | Calculate the alignment of the type.
     galignment :: a   -- ^ Element of a given type. Can be undefined  
                -> Int -- ^ Alignment.
     default galignment :: (Generic a, GStorable' (Rep a))
                          => a -> Int
-    galignment _ = maximum alignments
-        where alignments = glistAlignment' (from (undefined :: a))
+    galignment _ = internalAlignment (undefined :: Rep a p) 
 
     -- | Read the variable from a given pointer.
     gpeekByteOff :: Ptr b -- ^ Pointer to the variable
@@ -134,21 +173,16 @@ class GStorable a where
                  -> IO a  -- ^ Returned variable.
     default gpeekByteOff :: (Generic a, GStorable' (Rep a))
                          => Ptr b -> Int -> IO a
-    gpeekByteOff ptr offset = to <$> gpeekByteOff' offsets ptr offset
-        where sizes      = glistSizeOf'    (from (undefined :: a))
-              alignments = glistAlignment' (from (undefined :: a))
-              offsets    = calcOffsets $ zip sizes alignments
-    -- | Write the variable to a pointer. 
+    gpeekByteOff ptr offset = to <$> internalPeekByteOff ptr offset
+
+-- | Write the variable to a pointer. 
     gpokeByteOff :: Ptr b -- ^ Pointer to the variable. 
                  -> Int   -- ^ Offset.
                  -> a     -- ^ The variable
                  -> IO ()
     default gpokeByteOff :: (Generic a, GStorable' (Rep a))
                          => Ptr b -> Int -> a -> IO ()
-    gpokeByteOff ptr offset x = gpokeByteOff' offsets ptr offset (from x)
-        where sizes      = glistSizeOf'    (from (undefined :: a))
-              alignments = glistAlignment' (from (undefined :: a))
-              offsets    = calcOffsets $ zip sizes alignments
+    gpokeByteOff ptr offset x = internalPokeByteOff ptr offset (from x)
 
 
 ------Association to Storable class-------
