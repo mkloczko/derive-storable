@@ -17,6 +17,7 @@ import Foreign.Marshal.Alloc (malloc)
 import Data.Int
 import GHC.Generics
 import Foreign.Storable.Generic.Internal
+
 data TestData = TestData Int Int64 Int8 Int8
     deriving (Show, Generic, Eq)
 
@@ -26,7 +27,10 @@ instance Arbitrary TestData where
 
 spec :: Spec
 spec = do 
-    describe "instance (GStorable' f, GStorable' g) => GStorable (:*: f g p)" $ do
+   describe "M1 M1 (M1 K1 :*: M1 K1)" $ do
+       it 
+   
+   describe "instance (GStorable' f, GStorable' g) => GStorable (:*: f g p)" $ do
         it "glistSizeOf' @((:*:) f g p) == glistSizeOf' @(f p) ++ glistSizeOf' @(g p) " $ do
         -- Construct the tree using typeProduct
             property (\gen_type1 gen_type2 ->
@@ -89,3 +93,6 @@ spec = do
                 let gen_rep = unM1 $ unM1 $ from gstor
                 galignment gstor `shouldBe` galignment gen_rep
                 )
+
+main :: IO ()
+main = hspec spec

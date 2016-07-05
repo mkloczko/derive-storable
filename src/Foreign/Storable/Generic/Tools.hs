@@ -15,12 +15,10 @@ module Foreign.Storable.Generic.Tools (
 ) where
 
 
-
-
 -- Calculation of offsets.
 
 -- | The datatype representing the memory layout of a given struct.
-data Filling = Size Int | Padding Int deriving(Show)
+data Filling = Size Int | Padding Int deriving(Show, Eq)
 
 type Size      = Int
 type Alignment = Int
@@ -29,8 +27,9 @@ type Offset    = Int
 -- | Get the memory layout of a given type/struct. 
 getFilling :: [(Size,Alignment)] -- ^ List of sizes and aligments of the type's/struct's fields. [Int,Int]
            -> [Filling]          -- ^ List representing the memory layout. [Filling]
+getFilling []         = []
 getFilling size_align = getFilling' g_alig size_align 0 [] 
-    where g_alig = maximum $ (:) 0 $ map snd size_align
+    where g_alig = maximum $ map snd size_align
 
 getFilling' :: Alignment -> [(Size,Alignment)] -> Offset -> [Filling] -> [Filling] 
 getFilling' g_alig [] offset acc = acc 
@@ -48,9 +47,10 @@ getFilling' g_alig ((s1,al1):(s2,al2):sas) offset acc = getFilling' g_alig ((s2,
 -- The second argument is a list of sizes and aligments of the type's/struct's fields.
 calcOffsets :: [(Size, Alignment)]  -- ^ List of sizes and aligments of the type's/struct's fields. [(Int,Int)]
             -> [Offset]             -- ^ List representing the offests of the type's/struct's fields. [Int]
+calcOffsets []         = []
 calcOffsets size_align = calcOffsets' align filling 0 [0]
     where filling = getFilling size_align
-          align = maximum $ (:) 0 $ map snd size_align
+          align = maximum $ map snd size_align
 
 calcOffsets' :: Alignment -> [Filling] -> Offset -> [Offset] -> [Offset]
 calcOffsets' align []                     offset (_:acc) = reverse acc
@@ -63,9 +63,10 @@ calcOffsets' align (Size s:fs)            offset acc = calcOffsets' align fs new
 -- | Calculates the size of the type/struct.
 calcSize :: [(Size, Alignment)] -- ^ List of sizes and aligments of the type's/struct's fields. [(Int,Int)].
          -> Size                -- ^ The returned size. Int
+calcSize []          = 0
 calcSize size_align  = the_sum + the_padding
     where the_padding        = the_sum `mod` align 
-          align = maximum $ (:) 0 $ map snd size_align
+          align              = maximum $ map snd size_align
           filling            = getFilling size_align
           the_sum            = sum $ map summer filling 
           summer (Size s)    = s

@@ -48,7 +48,7 @@ cabal-version:       >=1.10
 
 library
   -- Modules exported by the library.
-  exposed-modules:     Foreign.Storable.Tuple, Foreign.Storable.Generic, Foreign.Storable.Generic.Meta, Foreign.Storable.Generic.Tools
+  exposed-modules:     Foreign.Storable.Tuple, Foreign.Storable.Generic, Foreign.Storable.Generic.Tools
   
   -- Modules included in this library but not exported.
   other-modules: Foreign.Storable.Generic.Internal       
@@ -83,4 +83,4 @@ test-suite spec
   build-depends:       base >= 4.8 && < 4.10, generic-storable, hspec == 2.2.*, QuickCheck == 2.8.*
 
   default-language:    Haskell2010
-  ghc-options:         -fhpc -hpcdir dist/hpc/generic-storable
+  ghc-options:         -fhpc 

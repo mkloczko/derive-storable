@@ -133,9 +133,7 @@ internalPeekByteOff :: forall f p b. (GStorable' f)
                     -> Int      -- ^ Offset 
                     -> IO (f p) -- ^ Resulting generic representation
 internalPeekByteOff ptr off  = gpeekByteOff' offsets ptr off
-    where sizes   = glistSizeOf'    (undefined :: f p)
-          aligns  = glistAlignment' (undefined :: f p)
-          offsets = calcOffsets $ zip sizes aligns
+    where offsets = internalOffsets (undefined :: f p)
 
 -- | Write the variable under the pointer, with offset.
 internalPokeByteOff :: forall f p b. (GStorable' f) 
@@ -144,10 +142,14 @@ internalPokeByteOff :: forall f p b. (GStorable' f)
                     -> f p   -- ^ Written generic representation 
                     -> IO () 
 internalPokeByteOff ptr off rep = gpokeByteOff' offsets ptr off rep
-    where sizes   = glistSizeOf'    (undefined :: f p)
-          aligns  = glistAlignment' (undefined :: f p)
-          offsets = calcOffsets $ zip sizes aligns
+    where offsets = internalOffsets (undefined :: f p)
 
+internalOffsets :: forall f p. (GStorable' f)
+                => f p
+                -> [Int]
+internalOffsets _ = calcOffsets $ zip sizes aligns
+    where sizes = glistSizeOf'    (undefined :: f p)
+          aligns= glistAlignment' (undefined :: f p)
 
 -- | The class uses the default Generic based implementations to 
 -- provide Storable instances for types made from primitive types.

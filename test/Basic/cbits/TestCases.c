@@ -6,7 +6,7 @@
 typedef struct C1{
     HsInt32 a;
     HsInt32 b;
-}__attribute__((__packed__)) C1;
+} C1;
 
 C1 * newC1(HsInt32 a, HsInt32 b){
     C1 * ret = (C1*) malloc(sizeof(C1));
@@ -44,7 +44,7 @@ typedef struct C2{
     HsInt32 a;
     HsInt16 b;
     HsInt8 c;
-}__attribute__((__packed__)) C2;
+} C2;
 
 C2 * newC2(HsInt32 a, HsInt16 b, HsInt8 c){
     C2 * ret = (C2*) malloc(sizeof(C2));
@@ -86,7 +86,7 @@ typedef struct C3{
     HsInt32 a;
     HsInt8 b;
     HsInt16 c;
-}__attribute__((__packed__)) C3;
+} C3;
 
 C3 * newC3(HsInt32 a, HsInt8 b, HsInt16 c){
     C3 * ret = (C3*) malloc(sizeof(C3));
@@ -128,7 +128,7 @@ typedef struct C4{
     HsInt32 a;
     HsInt8 b;
     HsInt8 c;
-}__attribute__((__packed__)) C4;
+} C4;
 
 C4 * newC4(HsInt32 a, HsInt8 b, HsInt8 c){
     C4 * ret = (C4*) malloc(sizeof(C4));
@@ -172,7 +172,7 @@ typedef struct C5{
     HsInt8 c;
     HsInt8 d;
     HsInt8 e;
-}__attribute__((__packed__)) C5;
+} C5;
 
 C5 * newC5(HsInt32 a, HsInt16 b, HsInt8 c, HsInt8 d, HsInt8 e){
     C5 * ret = (C5*) malloc(sizeof(C5));
@@ -222,7 +222,7 @@ typedef struct C6{
     HsInt64 a;
     HsInt8 b;
     HsInt64 c;
-}__attribute__((__packed__)) C6;
+} C6;
 
 C6 * newC6(HsInt64 a, HsInt8 b, HsInt64 c){
     C6 * ret = (C6*) malloc(sizeof(C6));
@@ -263,7 +263,7 @@ HsInt16 getAlignmentC6() {
 typedef struct C7{
     C1 a;
     HsInt32 b;
-}__attribute__((__packed__)) C7;
+} C7;
 
 C7 * newC7(C1* a, HsInt32 b){
     C7 * ret = (C7*) malloc(sizeof(C7));
@@ -301,7 +301,7 @@ typedef struct C8{
     C2 a;
     HsInt8 b;
     C4 c;
-}__attribute__((__packed__)) C8;
+} C8;
 
 C8 * newC8(C2* a, HsInt8 b, C4* c){
     C8 * ret = (C8*) malloc(sizeof(C8));
@@ -344,7 +344,7 @@ typedef struct C9{
     HsInt8 b;
     HsInt8 c;
     HsInt8 d;
-}__attribute__((__packed__)) C9;
+} C9;
 
 C9 * newC9(C5* a, HsInt8 b, HsInt8 c, HsInt8 d){
     C9 * ret = (C9*) malloc(sizeof(C9));
@@ -390,7 +390,7 @@ typedef struct C10{
     C8 a;
     HsInt64 b;
     C1 c;
-}__attribute__((__packed__)) C10;
+} C10;
 
 C10 * newC10(C8* a, HsInt64 b, C1* c){
     C10 * ret = (C10*) malloc(sizeof(C10));
@@ -431,7 +431,7 @@ HsInt16 getAlignmentC10() {
 typedef struct C11{
     C10 a;
     C10 b;
-}__attribute__((__packed__)) C11;
+} C11;
 
 C11 * newC11(C10* a, C10* b){
     C11 * ret = (C11*) malloc(sizeof(C11));
@@ -470,7 +470,7 @@ typedef struct C12{
     HsInt64 b;
     HsInt64 c;
     HsInt64 d;
-}__attribute__((__packed__)) C12;
+} C12;
 
 C12 * newC12(HsInt64 a, HsInt64 b, HsInt64 c, HsInt64 d){
     C12 * ret = (C12*) malloc(sizeof(C12));
@@ -517,7 +517,7 @@ typedef struct C13{
     C12 b;
     C12 c;
     C12 d;
-}__attribute__((__packed__)) C13;
+} C13;
 
 C13 * newC13(C12* a, C12* b, C12* c, C12* d){
     C13 * ret = (C13*) malloc(sizeof(C13));
@@ -565,7 +565,7 @@ typedef struct C14{
     C13 c;
     C13 d;
     HsInt8 e;
-}__attribute__((__packed__)) C14;
+} C14;
 
 C14 * newC14(C13* a, C13* b, C13* c, C13* d, HsInt8 e){
     C14 * ret = (C14*) malloc(sizeof(C14));
@@ -614,7 +614,7 @@ HsInt16 getAlignmentC14() {
 typedef struct C15{
     C12 a;
     C14 b;
-}__attribute__((__packed__)) C15;
+} C15;
 
 C15 * newC15(C12* a, C14* b){
     C15 * ret = (C15*) malloc(sizeof(C15));
@@ -652,7 +652,7 @@ typedef struct C16{
     C10 a;
     C15 b;
     C7 c;
-}__attribute__((__packed__)) C16;
+} C16;
 
 C16 * newC16(C10* a, C15* b, C7* c){
     C16 * ret = (C16*) malloc(sizeof(C16));
