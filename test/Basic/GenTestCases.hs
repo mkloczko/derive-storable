@@ -270,10 +270,12 @@ toC "Int64" = "HsInt64"
 toC "Int32" = "HsInt32"
 toC "Int16" = "HsInt16"
 toC "Int8"  = "HsInt8"
+toC "Double" = "HsDouble"
+toC "Float" = "HsFloat"
 toC v       = v
 
-c_prims  = ["HsInt64", "HsInt32", "HsInt16", "HsInt8"]
-hs_prims = ["Int64", "Int32", "Int16", "Int8"]
+c_prims  = ["HsInt64", "HsInt32", "HsInt16", "HsInt8","HsDouble", "HsFloat"]
+hs_prims = ["Int64", "Int32", "Int16", "Int8", "Double", "Float"]
 
 
 

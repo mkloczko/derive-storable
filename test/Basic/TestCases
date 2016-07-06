@@ -30,4 +30,11 @@ C15 = C12 C14
 
 C16 = C10 C15 C7
 
+-- Floating points
+
+C17 = Float Double Float
+C18 = Float Float Double Float
+C19 = C17 Float Double
+C20 = Double C18 Double C19
+
 

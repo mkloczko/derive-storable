@@ -435,3 +435,93 @@ foreign import ccall checkOffsetsC16 :: Ptr Int16 -> IO Int8
 foreign import ccall getSizeC16 :: IO Int16
 foreign import ccall getAlignmentC16 :: IO Int16
 
+data C17 = C17 Float Double Float
+    deriving (Show, Eq, Generic, GStorable)
+
+instance Checkable C17 where
+    checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC17 ptr1 ptr2
+    checkOffsets   _    offs = (==1) <$> checkOffsetsC17 offs
+    getSize        a          = fromIntegral <$> getSizeC17
+    getAlignment   a          = fromIntegral <$> getAlignmentC17
+    new (C17 a b c) = do
+        ptr <- newC17 a b c
+        return ptr
+
+instance Arbitrary C17 where 
+    arbitrary = C17 <$> arbitrary <*> arbitrary <*> arbitrary
+
+foreign import ccall newC17 :: Float -> Double -> Float -> IO (Ptr C17)
+foreign import ccall checkFieldsC17 :: Ptr C17 -> Ptr C17 -> IO Int8
+foreign import ccall checkOffsetsC17 :: Ptr Int16 -> IO Int8
+foreign import ccall getSizeC17 :: IO Int16
+foreign import ccall getAlignmentC17 :: IO Int16
+
+data C18 = C18 Float Float Double Float
+    deriving (Show, Eq, Generic, GStorable)
+
+instance Checkable C18 where
+    checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC18 ptr1 ptr2
+    checkOffsets   _    offs = (==1) <$> checkOffsetsC18 offs
+    getSize        a          = fromIntegral <$> getSizeC18
+    getAlignment   a          = fromIntegral <$> getAlignmentC18
+    new (C18 a b c d) = do
+        ptr <- newC18 a b c d
+        return ptr
+
+instance Arbitrary C18 where 
+    arbitrary = C18 <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+
+foreign import ccall newC18 :: Float -> Float -> Double -> Float -> IO (Ptr C18)
+foreign import ccall checkFieldsC18 :: Ptr C18 -> Ptr C18 -> IO Int8
+foreign import ccall checkOffsetsC18 :: Ptr Int16 -> IO Int8
+foreign import ccall getSizeC18 :: IO Int16
+foreign import ccall getAlignmentC18 :: IO Int16
+
+data C19 = C19 C17 Float Double
+    deriving (Show, Eq, Generic, GStorable)
+
+instance Checkable C19 where
+    checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC19 ptr1 ptr2
+    checkOffsets   _    offs = (==1) <$> checkOffsetsC19 offs
+    getSize        a          = fromIntegral <$> getSizeC19
+    getAlignment   a          = fromIntegral <$> getAlignmentC19
+    new (C19 a b c) = do
+        ptr_a <- newStorable a
+        ptr <- newC19 ptr_a b c
+        free ptr_a
+        return ptr
+
+instance Arbitrary C19 where 
+    arbitrary = C19 <$> arbitrary <*> arbitrary <*> arbitrary
+
+foreign import ccall newC19 :: Ptr C17 -> Float -> Double -> IO (Ptr C19)
+foreign import ccall checkFieldsC19 :: Ptr C19 -> Ptr C19 -> IO Int8
+foreign import ccall checkOffsetsC19 :: Ptr Int16 -> IO Int8
+foreign import ccall getSizeC19 :: IO Int16
+foreign import ccall getAlignmentC19 :: IO Int16
+
+data C20 = C20 Double C18 Double C19
+    deriving (Show, Eq, Generic, GStorable)
+
+instance Checkable C20 where
+    checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC20 ptr1 ptr2
+    checkOffsets   _    offs = (==1) <$> checkOffsetsC20 offs
+    getSize        a          = fromIntegral <$> getSizeC20
+    getAlignment   a          = fromIntegral <$> getAlignmentC20
+    new (C20 a b c d) = do
+        ptr_b <- newStorable b
+        ptr_d <- newStorable d
+        ptr <- newC20 a ptr_b c ptr_d
+        free ptr_b
+        free ptr_d
+        return ptr
+
+instance Arbitrary C20 where 
+    arbitrary = C20 <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+
+foreign import ccall newC20 :: Double -> Ptr C18 -> Double -> Ptr C19 -> IO (Ptr C20)
+foreign import ccall checkFieldsC20 :: Ptr C20 -> Ptr C20 -> IO Int8
+foreign import ccall checkOffsetsC20 :: Ptr Int16 -> IO Int8
+foreign import ccall getSizeC20 :: IO Int16
+foreign import ccall getAlignmentC20 :: IO Int16
+

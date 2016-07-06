@@ -690,3 +690,181 @@ HsInt16 getAlignmentC16() {
     return alignof(C16);
 }
 
+typedef struct C17{
+    HsFloat a;
+    HsDouble b;
+    HsFloat c;
+} C17;
+
+C17 * newC17(HsFloat a, HsDouble b, HsFloat c){
+    C17 * ret = (C17*) malloc(sizeof(C17));
+    ret->a = a;
+    ret->b = b;
+    ret->c = c;
+    return ret;
+}
+
+void pokeC17(C17* val, HsFloat a, HsDouble b, HsFloat c){
+    val->a = a;
+    val->b = b;
+    val->c = c;
+}
+
+int checkOffsetsC17(HsInt16 *offs){
+    int a = offsetof(C17, a) == offs[0];
+    int b = offsetof(C17, b) == offs[1];
+    int c = offsetof(C17, c) == offs[2];
+    return a && b && c;
+}
+
+int checkFieldsC17(C17* s1, C17* s2){
+    int a = s1->a == s2->a;
+    int b = s1->b == s2->b;
+    int c = s1->c == s2->c;
+    return a && b && c;
+}
+
+HsInt16 getSizeC17() {
+    return sizeof(C17);
+}
+
+HsInt16 getAlignmentC17() {
+    return alignof(C17);
+}
+
+typedef struct C18{
+    HsFloat a;
+    HsFloat b;
+    HsDouble c;
+    HsFloat d;
+} C18;
+
+C18 * newC18(HsFloat a, HsFloat b, HsDouble c, HsFloat d){
+    C18 * ret = (C18*) malloc(sizeof(C18));
+    ret->a = a;
+    ret->b = b;
+    ret->c = c;
+    ret->d = d;
+    return ret;
+}
+
+void pokeC18(C18* val, HsFloat a, HsFloat b, HsDouble c, HsFloat d){
+    val->a = a;
+    val->b = b;
+    val->c = c;
+    val->d = d;
+}
+
+int checkOffsetsC18(HsInt16 *offs){
+    int a = offsetof(C18, a) == offs[0];
+    int b = offsetof(C18, b) == offs[1];
+    int c = offsetof(C18, c) == offs[2];
+    int d = offsetof(C18, d) == offs[3];
+    return a && b && c && d;
+}
+
+int checkFieldsC18(C18* s1, C18* s2){
+    int a = s1->a == s2->a;
+    int b = s1->b == s2->b;
+    int c = s1->c == s2->c;
+    int d = s1->d == s2->d;
+    return a && b && c && d;
+}
+
+HsInt16 getSizeC18() {
+    return sizeof(C18);
+}
+
+HsInt16 getAlignmentC18() {
+    return alignof(C18);
+}
+
+typedef struct C19{
+    C17 a;
+    HsFloat b;
+    HsDouble c;
+} C19;
+
+C19 * newC19(C17* a, HsFloat b, HsDouble c){
+    C19 * ret = (C19*) malloc(sizeof(C19));
+    ret->a = *a;
+    ret->b = b;
+    ret->c = c;
+    return ret;
+}
+
+void pokeC19(C19* val, C17* a, HsFloat b, HsDouble c){
+    val->a = *a;
+    val->b = b;
+    val->c = c;
+}
+
+int checkOffsetsC19(HsInt16 *offs){
+    int a = offsetof(C19, a) == offs[0];
+    int b = offsetof(C19, b) == offs[1];
+    int c = offsetof(C19, c) == offs[2];
+    return a && b && c;
+}
+
+int checkFieldsC19(C19* s1, C19* s2){
+    int a = checkFieldsC17(&(s1->a),&(s2->a));
+    int b = s1->b == s2->b;
+    int c = s1->c == s2->c;
+    return a && b && c;
+}
+
+HsInt16 getSizeC19() {
+    return sizeof(C19);
+}
+
+HsInt16 getAlignmentC19() {
+    return alignof(C19);
+}
+
+typedef struct C20{
+    HsDouble a;
+    C18 b;
+    HsDouble c;
+    C19 d;
+} C20;
+
+C20 * newC20(HsDouble a, C18* b, HsDouble c, C19* d){
+    C20 * ret = (C20*) malloc(sizeof(C20));
+    ret->a = a;
+    ret->b = *b;
+    ret->c = c;
+    ret->d = *d;
+    return ret;
+}
+
+void pokeC20(C20* val, HsDouble a, C18* b, HsDouble c, C19* d){
+    val->a = a;
+    val->b = *b;
+    val->c = c;
+    val->d = *d;
+}
+
+int checkOffsetsC20(HsInt16 *offs){
+    int a = offsetof(C20, a) == offs[0];
+    int b = offsetof(C20, b) == offs[1];
+    int c = offsetof(C20, c) == offs[2];
+    int d = offsetof(C20, d) == offs[3];
+    return a && b && c && d;
+}
+
+int checkFieldsC20(C20* s1, C20* s2){
+    int a = s1->a == s2->a;
+    int b = checkFieldsC18(&(s1->b),&(s2->b));
+    int c = s1->c == s2->c;
+    int d = checkFieldsC19(&(s1->d),&(s2->d));
+    return a && b && c && d;
+}
+
+HsInt16 getSizeC20() {
+    return sizeof(C20);
+}
+
+HsInt16 getAlignmentC20() {
+    return alignof(C20);
+}
+

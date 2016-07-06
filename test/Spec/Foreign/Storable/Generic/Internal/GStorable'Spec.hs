@@ -18,6 +18,7 @@ import GHC.Generics
 import Foreign.Marshal.Alloc (malloc, mallocBytes, free)
 import Foreign.Marshal.Array (peekArray, pokeArray)
 import Data.Int
+import Data.Word
 
 
 
@@ -72,7 +73,7 @@ spec = do
 
                 -- Reserve some memory and write some data to it.
                 ptr    <- mallocBytes (off + size)
-                values <- generate $ vector (off + size) :: IO [Int8]
+                values <- generate $ ok_vector (off + size) :: IO [Word8]
                 pokeArray ptr values
 
                 -- Check:
@@ -93,7 +94,7 @@ spec = do
 
                 -- Reserve some memory and write some data to it.
                 ptr    <- mallocBytes (f_off + off + size)
-                values <- generate $ vector (f_off + off + size) :: IO [Int8]
+                values <- generate $ ok_vector (f_off + off + size) :: IO [Word8]
                 pokeArray ptr values
                
                 -- Check:
@@ -119,7 +120,7 @@ spec = do
 
                 -- Reserve some memory and write some data to it.
                 ptr    <- mallocBytes (off + size)
-                values <- generate $ vector (off + size) :: IO [Int8]
+                values <- generate $ ok_vector (off + size) :: IO [Word8]
                 pokeArray ptr values
 
                 -- Check:
@@ -165,11 +166,11 @@ spec = do
                 
                 -- First test
                 gpokeByteOff' offsets ptr off (M1 val)
-                bytes1 <- peekArray (off + size) ptr :: IO [Int8]
+                bytes1 <- peekArray (off + size) ptr :: IO [Word8]
               
                 --Second test
                 gpokeByteOff' offsets ptr off val
-                bytes2 <- peekArray (off + size) ptr :: IO [Int8]
+                bytes2 <- peekArray (off + size) ptr :: IO [Word8]
          
                 free ptr
                 -- Check:
@@ -187,11 +188,11 @@ spec = do
                 
                 -- First test
                 gpokeByteOff' [f_off] ptr off (K1 val)
-                bytes1 <- peekArray (f_off + off + size) ptr :: IO [Int8]
+                bytes1 <- peekArray (f_off + off + size) ptr :: IO [Word8]
               
                 --Second test
                 internalPokeByteOff ptr (f_off + off) val
-                bytes2 <- peekArray (f_off + off + size) ptr :: IO [Int8]
+                bytes2 <- peekArray (f_off + off + size) ptr :: IO [Word8]
          
                 free ptr
                 -- Check:
@@ -213,13 +214,13 @@ spec = do
                 
                 -- First poke
                 gpokeByteOff' offsets ptr off (val1 :*: val2)
-                bytes1 <- peekArray (off + size) ptr :: IO [Int8]
+                bytes1 <- peekArray (off + size) ptr :: IO [Word8]
               
                 --Second pokes
                 gpokeByteOff' offs_l ptr off val1
                 gpokeByteOff' offs_r ptr off val2
                 
-                bytes2 <- peekArray (off + size) ptr :: IO [Int8]
+                bytes2 <- peekArray (off + size) ptr :: IO [Word8]
          
                 free ptr
                 -- Check:

@@ -19,7 +19,7 @@ import GHC.Generics
 import Foreign.Marshal.Alloc (malloc, mallocBytes, free)
 import Foreign.Marshal.Array (peekArray, pokeArray)
 import Foreign.Ptr (Ptr, plusPtr)
-import Data.Int
+import Data.Word
 
 
 
@@ -44,7 +44,7 @@ spec = do
                 off <- generate $ suchThat arbitrary (\x -> x>=0 && x < 100)
                 
                 -- Area in memory to peek
-                bytes <- generate $ vector (off + size) :: IO [Int8]
+                bytes <- generate $ ok_vector (off + size)
                 ptr <- mallocBytes (off + size)
                 pokeArray ptr bytes
                 
@@ -58,25 +58,24 @@ spec = do
         it "it reads only specified area of the memory" $ do
             property $ (\((NestedToType (GenericType (test_type1 :: f p))) :: NestedToType 4) -> do    
                 let size      = internalSizeOf test_type1 
-                    pokeBytes = pokeArray :: (Ptr Int8 -> [Int8] -> IO ())
-
+                    pokeBytes = pokeArray :: (Ptr Word8 -> [Word8] -> IO ())
                 -- The memory area
                 ptr <- mallocBytes (size+16)
                 
                 -- Beginning state.
-                bytes1_beginning <- generate $ vector 8
-                bytes1_middle    <- generate $ vector size
-                bytes1_end       <- generate $ vector 8
+                bytes1_beginning <- generate $ ok_vector 8
+                bytes1_middle    <- generate $ ok_vector size
+                bytes1_end       <- generate $ ok_vector 8
                 
-                pokeBytes  ptr               bytes1_beginning
-                pokeBytes (plusPtr ptr 8)    bytes1_middle
+                pokeBytes  ptr                   bytes1_beginning
+                pokeBytes (plusPtr ptr 8)        bytes1_middle
                 pokeBytes (plusPtr ptr (size+8)) bytes1_end
             
                 v1 <- internalPeekByteOff ptr 8 :: IO (f p)
                 
                 -- Changed state 
-                bytes2_beginning <- generate $ suchThat (vector 8) (/=bytes1_beginning)
-                bytes2_end       <- generate $ suchThat (vector 8) (/=bytes1_end)
+                bytes2_beginning <- generate $ suchThat (ok_vector 8) (/=bytes1_beginning)
+                bytes2_end       <- generate $ suchThat (ok_vector 8) (/=bytes1_end)
                 
                 pokeBytes  ptr               bytes2_beginning
                 pokeBytes (plusPtr ptr (size + 8)) bytes2_end
@@ -96,11 +95,11 @@ spec = do
                 
                 -- first poke
                 internalPokeByteOff ptr off val
-                bytes1 <- peekArray (off + size) ptr :: IO [Int8]
+                bytes1 <- peekArray (off + size) ptr :: IO [Word8]
                 
                 -- second poke
                 gpokeByteOff' (internalOffsets val) ptr off val
-                bytes2 <- peekArray (off + size) ptr :: IO [Int8]
+                bytes2 <- peekArray (off + size) ptr :: IO [Word8]
  
                 free ptr
                 
@@ -112,7 +111,7 @@ spec = do
                 -- if test_type1 is different from test_type2, then 
                 -- the memory state has to change when poking both of them
                 let size = internalSizeOf test_type1 
-                    peekBytes = peekArray :: (Int -> Ptr Int8 -> IO [Int8])
+                    peekBytes = peekArray :: (Int -> Ptr Word8 -> IO [Word8])
                 -- The memory area
                 ptr <- mallocBytes (size+16)
                

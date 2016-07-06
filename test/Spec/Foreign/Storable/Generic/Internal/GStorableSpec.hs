@@ -18,6 +18,7 @@ import Foreign.Storable.Generic.Internal
 import Foreign.Storable.Generic -- overlapping Storable
 import Foreign.Storable.Generic.Instances
 import Data.Int
+import Data.Word
 import GHC.Generics
 import Foreign.Ptr (Ptr, plusPtr)
 import Foreign.Marshal.Alloc (malloc, mallocBytes, free)
@@ -53,10 +54,10 @@ pokeEquality a = do
     ptr <- mallocBytes (off + size)
     -- First poke
     gpokeByteOff ptr off a
-    bytes1 <- peekArray (off+size) ptr :: IO [Int8]
+    bytes1 <- peekArray (off+size) ptr :: IO [Word8]
 
     internalPokeByteOff ptr off (from a)
-    bytes2 <- peekArray (off+size) ptr :: IO [Int8]
+    bytes2 <- peekArray (off+size) ptr :: IO [Word8]
 
     free ptr
     bytes1 `shouldBe` bytes2            
@@ -65,7 +66,7 @@ peekEquality (a :: t) = do
     let size = gsizeOf a
     off   <- generate $ suchThat arbitrary (>=0)
     ptr   <- mallocBytes (off + size)
-    bytes <- generate $ vector (off+size) :: IO [Int8]
+    bytes <- generate $ ok_vector (off+size) :: IO [Word8]
    
     -- Save random stuff to memory
     pokeArray ptr bytes

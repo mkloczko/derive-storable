@@ -10,7 +10,7 @@
 {-#LANGUAGE DataKinds #-}
 module GenericType where
 -- Test modules
-import Test.QuickCheck
+import Test.QuickCheck hiding ((.&.))
 import Test.QuickCheck.Modifiers (NonEmptyList(..))
 -- Tested modules
 import Foreign.Storable.Generic.Internal
@@ -23,6 +23,8 @@ import Foreign.C.Types
 import Foreign.Storable
 import GHC.Generics  
 import Data.Int
+import Data.Word
+import Data.Bits
 import Data.Proxy
 import Debug.Trace
 import GHC.TypeLits
@@ -45,13 +47,17 @@ instance TestType Int16
 instance TestType Int32
 instance TestType Int64
 instance TestType Double
+instance TestType Float
 instance TestType (Ptr a)
 instance TestType Char
 
--- Debug information for debugging generic representations.
---
-class DebugShow a where
-    debugShow :: a -> String
+instance TestType CFloat
+instance Arbitrary CFloat where
+    arbitrary = realToFrac <$> (arbitrary :: Gen Float) 
+
+instance TestType CDouble
+instance Arbitrary CDouble where
+    arbitrary = realToFrac <$> (arbitrary :: Gen Double)
 
 -- | The wrappable type class. Wraps the type in generics
 -- and then into GenericType data type.
@@ -76,13 +82,16 @@ instance Arbitrary BasicType where
         valInt32   <- arbitrary :: Gen Int32 
         valInt64   <- arbitrary :: Gen Int64
         valDouble  <- arbitrary :: Gen Double
+        valFloat   <- arbitrary :: Gen Float
         valPtr     <- arbitrary :: Gen (Ptr a)
         valChar    <- arbitrary :: Gen Char
 
+        valCDouble  <- arbitrary :: Gen CDouble
+        valCFloat   <- arbitrary :: Gen CFloat
 
-        elements [BasicType valInt, BasicType valInt8, BasicType valInt16
-                 ,BasicType valInt32 ,BasicType valInt64, BasicType valDouble
-                 , BasicType valPtr, BasicType valChar]
+        elements [BasicType valInt,    BasicType valInt8, BasicType valInt16
+                 ,BasicType valInt32 , BasicType valInt64, BasicType valCDouble
+                 ,BasicType valCFloat, BasicType valPtr, BasicType valChar]
 
 -- | Wraps the basic type with 'M1' and 'K1' type constructors. 
 -- The result is usable by the testing algorithms.
@@ -111,6 +120,7 @@ instance Arbitrary GenericType where
         n <- choose (0,100) :: Gen Int
         genType n
 
+genType :: Int -> Gen GenericType
 genType 0 = wrapType <$> (arbitrary :: Gen BasicType)
 genType n = do
     step <- arbitrary :: Gen GenTree
@@ -162,7 +172,7 @@ nestedType' n gen
     | n <  0 = error "GenericType.nestedType': n is less than 0"
     | n == 0 = gen
     | n > 0  = do 
-        fields <- choose (1, 2*n)
+        fields <- choose (1, 4*n)
         nestedType' (n-1) (wrapType <$> toGenericType <$> vectorOf fields gen) 
 
 -- | For generating nested types with components from levels below.
@@ -175,7 +185,7 @@ nestedToType n =do
 typeProduct :: GenericType -> GenericType -> GenericType
 typeProduct (GenericType val1) (GenericType val2) = GenericType $ val1 :*: val2
 
--- | Wraps the ['BasicType'] and ['GenericType'] lists as needed.
+-- | Creates a tree for type product.
 toGenericType :: [GenericType] -> GenericType
 toGenericType []  = error "toGenericType requires at least one type"
 toGenericType [v] = v
@@ -190,3 +200,8 @@ instance {-#OVERLAPS#-} (GStorable' f) => GStorable' (K1 i (f p)) where
     gpokeByteOff' [f_off] ptr off (K1 v) = internalPokeByteOff ptr (off + f_off) v
     gpokeByteOff' offs ptr off v  = error "Mismatch between number of offsets and fields"
     gnumberOf'      _  = 1
+
+-- | Helps with avoiding NaN problem. 
+ok_vector :: Int -> Gen [Word8]
+ok_vector n = vectorOf n (suchThat arbitrary $ (\x-> (x .&. 127) /= 127) )
+
