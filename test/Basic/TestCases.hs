@@ -18,6 +18,7 @@ import Foreign.Marshal.Array (mallocArray, pokeArray)
 
 import Foreign.Storable.Generic.Tools
 import Foreign.Storable.Generic.Internal
+import Foreign.Storable.Generic.Instances
 import Data.Int
 import Control.Monad (sequence, liftM)
 import System.Exit
