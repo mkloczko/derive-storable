@@ -14,31 +14,22 @@ module Foreign.Storable.Generic.Tools (
     calcSize
 ) where
 
-import Generics.Deriving
-import Foreign.Ptr
-import Foreign.Storable
-import Foreign.Marshal.Alloc
-
-import Data.Int
-
-import Debug.Trace
-
-
 
 -- Calculation of offsets.
 
 -- | The datatype representing the memory layout of a given struct.
-data Filling = Size Int | Padding Int deriving(Show)
+data Filling = Size Int | Padding Int deriving(Show, Eq)
 
 type Size      = Int
 type Alignment = Int
 type Offset    = Int
 
 -- | Get the memory layout of a given type/struct. 
-getFilling :: Alignment          -- ^ Global alignment of a type. Int
-           -> [(Size,Alignment)] -- ^ List of sizes and aligments of the type's/struct's fields. [Int,Int]
+getFilling :: [(Size,Alignment)] -- ^ List of sizes and aligments of the type's/struct's fields. [Int,Int]
            -> [Filling]          -- ^ List representing the memory layout. [Filling]
-getFilling g_alig size_align = getFilling' g_alig size_align 0 [] 
+getFilling []         = []
+getFilling size_align = getFilling' g_alig size_align 0 [] 
+    where g_alig = maximum $ map snd size_align
 
 getFilling' :: Alignment -> [(Size,Alignment)] -> Offset -> [Filling] -> [Filling] 
 getFilling' g_alig [] offset acc = acc 
@@ -54,11 +45,12 @@ getFilling' g_alig ((s1,al1):(s2,al2):sas) offset acc = getFilling' g_alig ((s2,
 
 -- | Calculates the memory offset of type's/struct's fields.
 -- The second argument is a list of sizes and aligments of the type's/struct's fields.
-calcOffsets :: Alignment            -- ^ Global alignment of a type. Int
-            -> [(Size, Alignment)]  -- ^ List of sizes and aligments of the type's/struct's fields. [(Int,Int)]
+calcOffsets :: [(Size, Alignment)]  -- ^ List of sizes and aligments of the type's/struct's fields. [(Int,Int)]
             -> [Offset]             -- ^ List representing the offests of the type's/struct's fields. [Int]
-calcOffsets align size_align = calcOffsets' align filling 0 [0]
-    where filling = getFilling align size_align
+calcOffsets []         = []
+calcOffsets size_align = calcOffsets' align filling 0 [0]
+    where filling = getFilling size_align
+          align = maximum $ map snd size_align
 
 calcOffsets' :: Alignment -> [Filling] -> Offset -> [Offset] -> [Offset]
 calcOffsets' align []                     offset (_:acc) = reverse acc
@@ -69,12 +61,13 @@ calcOffsets' align (Size s:fs)            offset acc = calcOffsets' align fs new
 
 
 -- | Calculates the size of the type/struct.
-calcSize :: Alignment           -- ^ Global alignment of a type/struct. Int 
-         -> [(Size, Alignment)] -- ^ List of sizes and aligments of the type's/struct's fields. [(Int,Int)].
+calcSize :: [(Size, Alignment)] -- ^ List of sizes and aligments of the type's/struct's fields. [(Int,Int)].
          -> Size                -- ^ The returned size. Int
-calcSize align size_align  = the_sum + the_padding
-    where the_padding        = the_sum `mod` align
-          filling            = getFilling align size_align
+calcSize []          = 0
+calcSize size_align  = the_sum + the_padding
+    where the_padding        = the_sum `mod` align 
+          align              = maximum $ map snd size_align
+          filling            = getFilling size_align
           the_sum            = sum $ map summer filling 
           summer (Size s)    = s
           summer (Padding p) = p

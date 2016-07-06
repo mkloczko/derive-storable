@@ -5,17 +5,25 @@
 {-#LANGUAGE UndecidableInstances #-}
 
 
-module Foreign.Storable.Generic (GStorable (..)) where
+module Foreign.Storable.Generic (GStorable (..), Storable(..)) where
 
 
 
-import Generics.Deriving
-import Foreign.Ptr
 import Foreign.Storable
-import Foreign.Marshal.Alloc
 
-
---import Foreign.Storable.Generic.Tools
 import Foreign.Storable.Generic.Internal (GStorable (..))
+
+
+------Association to Storable class-------
+
+instance {-# OVERLAPS #-} (GStorable a) => (Storable a) where
+    {-# INLINE sizeOf #-}
+    sizeOf      = gsizeOf
+    {-# INLINE alignment #-}
+    alignment   = galignment
+    {-# INLINE peekByteOff #-}
+    peekByteOff = gpeekByteOff
+    {-# INLINE pokeByteOff #-}
+    pokeByteOff = gpokeByteOff
 
 
