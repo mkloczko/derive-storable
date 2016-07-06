@@ -15,6 +15,7 @@ import GenericType
 import Foreign.Storable.Generic.Internal 
 
 -- Additional data
+import Foreign.Storable.Generic -- overlapping Storable
 import Foreign.Storable.Generic.Instances
 import Data.Int
 import GHC.Generics
@@ -39,47 +40,8 @@ instance Arbitrary TestData3 where
     arbitrary = TestData3 <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 
--- | Check whether gpokeByteOff modifies the specified area 
-memory_bounds :: (Eq a,Arbitrary a, GStorable a) => a -> Expectation
-memory_bounds test_type1 = do
-    test_type2 <- generate $ suchThat arbitrary (/=test_type1)
-    -- if test_type1 is different from test_type2, then 
-    -- the memory state has to change when poking both of them
-    let size = gsizeOf test_type1 
-        peekBytes = peekArray :: (Int -> Ptr Int8 -> IO [Int8])
-    -- The memory area
-    ptr <- mallocBytes (size+16)
-    
-    -- Beginning state.
-    mem_state1_beginning <- peekBytes 8     ptr                   
-    mem_state1_middle    <- peekBytes size (plusPtr ptr 8)              
-    mem_state1_end       <- peekBytes 8    (plusPtr ptr (size+8))
-
-    gpokeByteOff ptr 8 test_type1
-    -- Poked first variable
-    mem_state2_beginning <- peekBytes 8     ptr
-    mem_state2_middle    <- peekBytes size (plusPtr ptr 8)
-    mem_state2_end       <- peekBytes 8    (plusPtr ptr (size+8))
-
-    gpokeByteOff ptr 8 test_type2
-    -- Poked second state
-    mem_state3_beginning <- peekBytes 8     ptr
-    mem_state3_middle    <- peekBytes size (plusPtr ptr 8)
-    mem_state3_end       <- peekBytes 8    (plusPtr ptr (size+8))
-
-  
-    -- Beginnings and ends should stay the same. The middle one should be different from
-    -- the one at the beginning.
-    sequence_ [mem_state1_beginning `shouldBe` mem_state2_beginning
-              ,mem_state2_beginning `shouldBe` mem_state3_beginning
-              ,mem_state1_end       `shouldBe` mem_state2_end                  
-              ,mem_state2_end       `shouldBe` mem_state3_end
-              ,(mem_state1_middle /= mem_state2_middle) || (mem_state1_middle /= mem_state3_middle) `shouldBe` True]
-     
-
 sizeEquality a = do
     gsizeOf a `shouldBe` internalSizeOf (from a)
-
 
 alignmentEquality a = do
     gsizeOf a `shouldBe` internalSizeOf (from a)
@@ -126,7 +88,7 @@ peekAndPoke (a :: t)= do
 spec :: Spec
 spec = do
     describe "gsizeOf" $ do
-        it "gsizeOf a == internalSizeOf (from a)" $ property $ do 
+        it "is equal to: internalSizeOf (from a)" $ property $ do 
             test1 <- generate $ arbitrary :: IO TestData
             test2 <- generate $ arbitrary :: IO TestData2
             test3 <- generate $ arbitrary :: IO TestData3
@@ -134,7 +96,7 @@ spec = do
             sizeEquality test2
             sizeEquality test3
     describe "galignment" $ do
-        it "galignment a == internalAlignment (from a)" $ property $ do 
+        it "is equal to: internalAlignment (from a)" $ property $ do 
             test1 <- generate $ arbitrary :: IO TestData
             test2 <- generate $ arbitrary :: IO TestData2
             test3 <- generate $ arbitrary :: IO TestData3
@@ -142,22 +104,15 @@ spec = do
             alignmentEquality test2
             alignmentEquality test3
     describe "gpokeByteOff" $ do
-        it "gpokeByteOff ptr off a = internalPokeByteOff ptr off (from a)" $ property $ do 
+        it "is equal to: internalPokeByteOff ptr off (from a)" $ property $ do 
             test1 <- generate $ arbitrary :: IO TestData
             test2 <- generate $ arbitrary :: IO TestData2
             test3 <- generate $ arbitrary :: IO TestData3
             pokeEquality test1
             pokeEquality test2
             pokeEquality test3
-        it "modifies only specified area of the memory" $ property $ do
-            test1 <- generate $ arbitrary :: IO TestData
-            test2 <- generate $ arbitrary :: IO TestData2
-            test3 <- generate $ arbitrary :: IO TestData3
-            memory_bounds test1
-            memory_bounds test2
-            memory_bounds test3
     describe "gpeekByteOff" $ do
-        it "gpeekByteOff ptr off = to <$> internalPeekByteOff ptr off" $ property $ do 
+        it "is equal to: to <$> internalPeekByteOff ptr off" $ property $ do 
             test1 <- generate $ arbitrary :: IO TestData
             test2 <- generate $ arbitrary :: IO TestData2
             test3 <- generate $ arbitrary :: IO TestData3

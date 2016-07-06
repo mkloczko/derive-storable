@@ -16,7 +16,7 @@ spec = do
     describe "calcSize" $ do
         it "calcSize [] = 0" $ do
             calcSize [] `shouldBe` 0
-        it "equal to sum of padding" $ do
+        it "is equal to sum of padding" $ do
             let summer (Padding a) = a
                 summer (Size    a) = a
             property $ do

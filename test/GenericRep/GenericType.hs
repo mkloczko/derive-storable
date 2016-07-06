@@ -18,7 +18,8 @@ import Foreign.Storable.Generic.Internal
 -- Test data
 import Foreign.Storable.Generic.Tools
 import Foreign.Storable.Generic.Instances
-import Foreign.Ptr (Ptr)
+import Foreign.Ptr (Ptr, nullPtr, plusPtr)
+import Foreign.C.Types
 import Foreign.Storable
 import GHC.Generics  
 import Data.Int
@@ -27,15 +28,33 @@ import Debug.Trace
 import GHC.TypeLits
 
 import Unsafe.Coerce
+
 -- | TestType - the basic building blocks from which
 -- GStorable instances are built.
 class (Arbitrary a,Eq a,GStorable a, Show a) => TestType a
 
+-- Generating random pointers.
+instance Arbitrary (Ptr a) where
+    arbitrary = do
+        plus <- choose (0, 10000)
+        return $ plusPtr nullPtr plus
+
 instance TestType Int
+instance TestType Int8
+instance TestType Int16
+instance TestType Int32
+instance TestType Int64
+instance TestType Double
+instance TestType (Ptr a)
 instance TestType Char
 
+-- Debug information for debugging generic representations.
+--
+class DebugShow a where
+    debugShow :: a -> String
 
--- | The wrappable type class. Wraps the type in generics.
+-- | The wrappable type class. Wraps the type in generics
+-- and then into GenericType data type.
 class (Show a) => Wrappable a where
     wrapType :: a -> GenericType
 
@@ -51,9 +70,19 @@ instance Show BasicType where
 
 instance Arbitrary BasicType where
     arbitrary = do
-        valInt  <- choose (minBound :: Int, maxBound :: Int)
-        valChar <- choose (minBound :: Char, maxBound :: Char)
-        elements [BasicType valInt, BasicType valChar]
+        valInt     <- arbitrary :: Gen Int 
+        valInt8    <- arbitrary :: Gen Int8
+        valInt16   <- arbitrary :: Gen Int16 
+        valInt32   <- arbitrary :: Gen Int32 
+        valInt64   <- arbitrary :: Gen Int64
+        valDouble  <- arbitrary :: Gen Double
+        valPtr     <- arbitrary :: Gen (Ptr a)
+        valChar    <- arbitrary :: Gen Char
+
+
+        elements [BasicType valInt, BasicType valInt8, BasicType valInt16
+                 ,BasicType valInt32 ,BasicType valInt64, BasicType valDouble
+                 , BasicType valPtr, BasicType valChar]
 
 -- | Wraps the basic type with 'M1' and 'K1' type constructors. 
 -- The result is usable by the testing algorithms.
@@ -78,7 +107,26 @@ data GenericType where
    GenericType  :: (p ~ MyPhantom, Eq (f p), Arbitrary (f p), GStorable' f, Show (f p)) => f p -> GenericType
 
 instance Arbitrary GenericType where
-    arbitrary = nestedType 1
+    arbitrary = do
+        n <- choose (0,100) :: Gen Int
+        genType n
+
+genType 0 = wrapType <$> (arbitrary :: Gen BasicType)
+genType n = do
+    step <- arbitrary :: Gen GenTree
+    case step of
+        Producted -> do
+            div <- choose  (0,n) 
+            gt1 <- genType  div
+            gt2 <- genType (n-div)
+            return $ (\(GenericType t1) (GenericType t2) -> GenericType $ t1 :*: t2) gt1 gt2 
+        M1ed      -> (\(GenericType t) -> GenericType $ M1 t) <$> genType (n-1) 
+        K1ed      -> (\(GenericType t) -> GenericType $ K1 t) <$> genType (n-1) 
+
+data GenTree = Producted | M1ed | K1ed
+
+instance Arbitrary GenTree where
+    arbitrary = elements [Producted, M1ed , K1ed]
 
 instance Show GenericType where
     show (GenericType    val) = show val
@@ -90,7 +138,7 @@ data NestedType (n :: Nat) = NestedType GenericType
 
 instance (KnownNat n) => Show (NestedType n) where
     show (NestedType (GenericType val)) = type_info ++ show val
-        where type_info = "NestedType " ++ (show $ natVal (Proxy :: Proxy n))
+        where type_info = "NestedType " ++ (show $ natVal (Proxy :: Proxy n)) ++ " "
 
 instance (KnownNat n) => Arbitrary (NestedType n) where
     arbitrary = NestedType <$> nestedType (fromIntegral $ natVal (Proxy :: Proxy n))
@@ -99,7 +147,7 @@ data NestedToType (n :: Nat) = NestedToType GenericType
 
 instance (KnownNat n) => Show (NestedToType n) where
     show (NestedToType (GenericType val)) = type_info ++ show val
-        where type_info = "NestedType " ++ (show $ natVal (Proxy :: Proxy n))
+        where type_info = "NestedToType " ++ (show $ natVal (Proxy :: Proxy n)) ++ " "
 
 instance (KnownNat n) => Arbitrary (NestedToType n) where
     arbitrary = NestedToType <$> nestedToType (fromIntegral $ natVal (Proxy :: Proxy n))

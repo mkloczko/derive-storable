@@ -187,27 +187,3 @@ class GStorable a where
     gpokeByteOff ptr offset x = internalPokeByteOff ptr offset (from x)
 
 
-------Association to Storable class-------
-
--- instance (Storable a) => (GStorable a) where
---     {-# INLINE gsizeOf #-}
---     gsizeOf      = sizeOf
---     {-# INLINE galignment #-}
---     galignment   = alignment
---     {-# INLINE gpeekByteOff #-}
---     gpeekByteOff = peekByteOff
---     {-# INLINE gpokeByteOff #-}
---     gpokeByteOff = pokeByteOff
-
-
-instance {-# OVERLAPS #-} (GStorable a) => (Storable a) where
-    {-# INLINE sizeOf #-}
-    sizeOf      = gsizeOf
-    {-# INLINE alignment #-}
-    alignment   = galignment
-    {-# INLINE peekByteOff #-}
-    peekByteOff = gpeekByteOff
-    {-# INLINE pokeByteOff #-}
-    pokeByteOff = gpokeByteOff
-
-

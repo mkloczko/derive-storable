@@ -4,9 +4,13 @@ module Foreign.Storable.Generic.Instances where
 import Data.Int
 import Data.Word
 import Foreign.C.Types
+import Foreign.Ptr
+import Foreign.StablePtr
 import Foreign.Storable
 import Foreign.Storable.Generic.Internal
 import GHC.Fingerprint.Type
+import System.Posix.Types
+import Data.Ratio (Ratio)
 #define MakeGStorable(Type)     \
 instance GStorable Type where   \
     gsizeOf      = sizeOf       \
@@ -41,5 +45,45 @@ MakeGStorable (CSUSeconds)
 MakeGStorable (CUSeconds)
 MakeGStorable (CTime)
 MakeGStorable (CClock)
+MakeGStorable (CSigAtomic)
+MakeGStorable (CPtrdiff)
+MakeGStorable (CDouble)
+MakeGStorable (CFloat)
+MakeGStorable (CULLong)
+MakeGStorable (CLLong)
+MakeGStorable (CULong)
+MakeGStorable (CLong)
+MakeGStorable (CUInt)
+MakeGStorable (CInt)
+MakeGStorable (CUShort)
+MakeGStorable (CShort)	 
+MakeGStorable (CUChar)
+MakeGStorable (CSChar)
+MakeGStorable (CChar)
 
--- and so on..
+-- Ptr
+MakeGStorable (IntPtr)
+MakeGStorable (WordPtr)
+
+MakeGStorable ((StablePtr a))
+MakeGStorable ((Ptr a)) 
+MakeGStorable ((FunPtr a))
+
+-- Posix
+MakeGStorable (Fd)
+MakeGStorable (CRLim)
+MakeGStorable (CTcflag)
+MakeGStorable (CSpeed)
+MakeGStorable (CCc)
+MakeGStorable (CUid)
+MakeGStorable (CNlink)
+MakeGStorable (CGid)
+MakeGStorable (CSsize)
+MakeGStorable (CPid)
+MakeGStorable (COff)
+MakeGStorable (CMode)
+MakeGStorable (CIno)
+MakeGStorable (CDev)
+ 
+
+
