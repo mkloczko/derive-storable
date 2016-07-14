@@ -116,15 +116,16 @@ instance (GStorable a) => GStorable' (K1 i a) where
 internalSizeOf :: forall f p. (GStorable' f)
                => f p  -- ^ Generic representation 
                -> Int  -- ^ Resulting size
-internalSizeOf _  = calcSize $ zip sizes aligns
+internalSizeOf _  = calcSize $ (zip sizes aligns) ++ [(0 ,max_align)]
     where sizes  = glistSizeOf'    (undefined :: f p)
           aligns = glistAlignment' (undefined :: f p)
+          max_align = calcAlignment aligns
 
 -- | Calculates the alignment of generic data-type.
 internalAlignment :: forall f p. (GStorable' f) 
                   => f p -- ^ Generic representation
                   -> Int -- ^ Resulting alignment
-internalAlignment  _  = maximum aligns
+internalAlignment  _  = calcAlignment aligns
     where aligns = glistAlignment' (undefined :: f p)
 
 -- | View the variable under a pointer, with offset.
@@ -147,9 +148,10 @@ internalPokeByteOff ptr off rep = gpokeByteOff' offsets ptr off rep
 internalOffsets :: forall f p. (GStorable' f)
                 => f p
                 -> [Int]
-internalOffsets _ = calcOffsets $ zip sizes aligns
+internalOffsets _ = calcOffsets $ zip sizes aligns ++ [(0 ,max_align)]
     where sizes = glistSizeOf'    (undefined :: f p)
           aligns= glistAlignment' (undefined :: f p)
+          max_align = calcAlignment aligns
 
 -- | The class uses the default Generic based implementations to 
 -- provide Storable instances for types made from primitive types.

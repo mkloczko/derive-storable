@@ -10,6 +10,8 @@
 module Foreign.Storable.Generic.Tools (
     Filling (..), 
     getFilling,
+    sumFilling,
+    calcAlignment, 
     calcOffsets,
     calcSize
 ) where
@@ -24,24 +26,6 @@ type Size      = Int
 type Alignment = Int
 type Offset    = Int
 
--- | Get the memory layout of a given type/struct. 
-getFilling :: [(Size,Alignment)] -- ^ List of sizes and aligments of the type's/struct's fields. [Int,Int]
-           -> [Filling]          -- ^ List representing the memory layout. [Filling]
-getFilling []         = []
-getFilling size_align = getFilling' g_alig size_align 0 [] 
-    where g_alig = maximum $ map snd size_align
-
-getFilling' :: Alignment -> [(Size,Alignment)] -> Offset -> [Filling] -> [Filling] 
-getFilling' g_alig [] offset acc = acc 
-getFilling' g_alig [(s1,al1)] offset acc = acc ++ to_add 
-    where cos1       = (offset + s1) `mod` g_alig
-          cos2       = cos1 /= 0 
-          to_add     = if cos2 then [Size s1, Padding (g_alig - cos1)] else [Size s1]
-getFilling' g_alig ((s1,al1):(s2,al2):sas) offset acc = getFilling' g_alig ((s2,al2):sas) new_offset (acc ++ to_add)
-    where cos1       = (offset + s1) `mod` al2
-          cos2       = cos1 /= 0 
-          new_offset = if cos2 then offset + s1 + (al2 - cos1) else offset + s1
-          to_add     = if cos2 then [Size s1, Padding (al2 - cos1)] else [Size s1]
 
 -- | Calculates the memory offset of type's/struct's fields.
 -- The second argument is a list of sizes and aligments of the type's/struct's fields.
@@ -64,11 +48,49 @@ calcOffsets' align (Size s:fs)            offset acc = calcOffsets' align fs new
 calcSize :: [(Size, Alignment)] -- ^ List of sizes and aligments of the type's/struct's fields. [(Int,Int)].
          -> Size                -- ^ The returned size. Int
 calcSize []          = 0
-calcSize size_align  = the_sum + the_padding
-    where the_padding        = the_sum `mod` align 
-          align              = maximum $ map snd size_align
-          filling            = getFilling size_align
-          the_sum            = sum $ map summer filling 
-          summer (Size s)    = s
-          summer (Padding p) = p
+calcSize size_align  = (sumFilling.getFilling) size_align
 
+
+{-#INLINE sumFilling#-}
+sumFilling :: [Filling] -> Int
+sumFilling = sumFilling_cps (\x -> unwrap x)
+    where unwrap (Size    n) = n
+          unwrap (Padding n) = n
+
+sumFilling_cps :: (Filling -> Int) -> [Filling] -> Int
+sumFilling_cps cont [f]      = cont f
+sumFilling_cps cont (f:rest) = sumFilling_cps (\x -> unwrap x + cont f) rest 
+    where unwrap (Size    n) = n
+          unwrap (Padding n) = n
+
+
+{-#INLINE getFilling #-}
+getFilling :: [(Int, Int)] -> [Filling]
+getFilling = reverse.filter_noise.getFilling_cps (\(s,a) -> ([Size s],s) )
+
+getFilling_cps :: ((Int, Int) -> ([Filling], Int) ) -> [(Int,Int)] -> [Filling]
+getFilling_cps cont []    = [Size 0]
+getFilling_cps cont [val] = fst $ cont val
+getFilling_cps cont (val:rest) = getFilling_cps next_cont rest
+    where next_cont (s2,0 ) = error (" WTF?! " ++ show s2 ++ " " ++ show rest) 
+          next_cont (s2,a2) = do
+              let (fills, off) = cont val
+                  padding      = (a2 - (off+s2))  `mod` a2
+              (Size s2 : Padding padding : fills, off+s2+padding)
+
+{-# INLINE filter_noise #-}
+filter_noise :: [Filling] -> [Filling]
+filter_noise = filter predicate
+    where predicate (Size    n) = n > 0
+          predicate (Padding n) = n > 0
+
+{-#INLINE calcAlignment #-}
+calcAlignment :: [Int] -> Int
+calcAlignment als = calcAlignment_cps id als
+
+calcAlignment_cps :: (Int -> Int) -> [Int] -> Int
+-- calcAlignment_cps _    []     = 0
+calcAlignment_cps cont [a]    = cont a
+calcAlignment_cps cont (a:as) = calcAlignment_cps (\x -> max x (cont a)) as
+
+-- Ignores the first alignment
