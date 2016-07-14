@@ -12,6 +12,7 @@ module Foreign.Storable.Generic (GStorable (..), Storable(..)) where
 import Foreign.Storable
 
 import Foreign.Storable.Generic.Internal (GStorable (..))
+import Foreign.Storable.Generic.Instances
 
 
 ------Association to Storable class-------
