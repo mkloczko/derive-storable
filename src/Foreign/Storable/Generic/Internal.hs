@@ -3,35 +3,51 @@
 {-#LANGUAGE FlexibleContexts #-}
 {-#LANGUAGE DefaultSignatures #-}
 {-#LANGUAGE TypeOperators #-}
-{-#LANGUAGE ScopedTypeVariables #-}
 {-#LANGUAGE UndecidableInstances #-}
+
+{-#LANGUAGE ScopedTypeVariables #-}
+
+{-#LANGUAGE InstanceSigs #-}
+{-#LANGUAGE AllowAmbiguousTypes #-}
+
+{-#LANGUAGE BangPatterns #-}
 
 module Foreign.Storable.Generic.Internal where
 
 import GHC.Generics
+import GHC.TypeLits (KnownNat)
 import Foreign.Ptr
 import Foreign.Storable
 import Foreign.Marshal.Alloc
 import Foreign.C.Types
 
+import Foreign.Storable.Generic.Internal.TypeFuns
+import Foreign.Storable.Generic.Internal.Case
+
 import Data.Int
 
 import Debug.Trace
-
 import Foreign.Storable.Generic.Tools
+
+import Control.DeepSeq
+import System.IO.Unsafe
 
 -- Defining the generics ---
 
 class GStorable' f where
     -- | Read the element at a given offset. Additional information about the offests 
     -- of the subfields are needed.
-    gpeekByteOff' :: [Int]    -- ^ List of fields' offsets for the type/struct. 
+    gpeekByteOff' :: (KnownNat (NoFields g), GStorable' g)
+                  => Int      -- ^ List of fields' offsets for the type/struct. 
+                  -> g p
                   -> Ptr b    -- ^ The pointer to the type/struct.
                   -> Int      -- ^ Global offset.
                   -> IO (f a) -- ^ The result, wrapped in GHC.Generic metadata.
     -- | Write the element at a given offset. Additional information about the offests 
     -- of the subfields are needed.
-    gpokeByteOff' :: [Int]  -- ^ List of fields' offsets for the type/struct.
+    gpokeByteOff' :: (KnownNat (NoFields g), GStorable' g)
+                  => Int    -- ^ List of fields' offsets for the type/struct.
+                  -> g p
                   -> Ptr b  -- ^ The pointer to the type/struct.
                   -> Int    -- ^ Global offset.
                   -> (f a)  -- ^ The element to write, wrapped in GHC.Generic metadata.
@@ -52,39 +68,40 @@ class GStorable' f where
 
 instance (GStorable' f) => GStorable' (M1 i t f) where
     -- Wrap the peeked value in metadata.
-    gpeekByteOff' offsets ptr offset = M1 <$> gpeekByteOff' offsets ptr offset
+    {-# INLINE gpeekByteOff' #-}
+    gpeekByteOff' ix t ptr offset = M1 <$> gpeekByteOff' ix t ptr offset
     -- Discard the metadata and go further.
-    gpokeByteOff' offsets ptr offset (M1 x) = gpokeByteOff' offsets ptr offset x 
+    {-# INLINE gpokeByteOff' #-}
+    gpokeByteOff' ix t ptr offset (M1 x) = gpokeByteOff' ix t ptr offset x 
     
 
     gnumberOf' (M1 v) = gnumberOf' v
-    glistSizeOf' _ = glistSizeOf' (undefined :: f p)
+    glistSizeOf'    _ = glistSizeOf' (undefined :: f p)
     glistAlignment' _ = glistAlignment' (undefined :: f p)
 
 ------------------------------------------
 --   The important part of the code!    --
 ------------------------------------------
 
-instance (GStorable' f, GStorable' g) => GStorable' (f :*: g) where
+instance (KnownNat (NoFields f), KnownNat (NoFields g), GStorable' f, GStorable' g) => GStorable' (f :*: g) where
     -- Tree-like traversal for reading the type.
-    gpeekByteOff' offsets ptr offset = if is_ok then (:*:) <$> peeker offs1 <*>  peeker offs2 else error_action
+    {-#INLINE gpeekByteOff' #-}
+    gpeekByteOff' ix t ptr offset = (:*:) <$> (peeker (ix-n2)) <*>  (peeker ix)
         where n1 = gnumberOf' (undefined :: f a)               -- Number of elements for the left part of the tree.
               n2 = gnumberOf' (undefined :: g a)               -- Number of elements for the right part of the tree
-              is_ok = n1+n2 == length offsets                  -- Check if offset number is the same as the number of subelements.
+              is_ok = True -- n1+n2 == ix                  -- Check if offset number is the same as the number of subelements.
               error_action = error "Foreign.Storable.Generic.Internal.gpeekByteOff': Mismatch between number of fields and number of offsets"
-              (offs1,offs2) = splitAt n1 offsets               -- Offsets for the left and right part of the tree.
-              peeker offs = gpeekByteOff' offs ptr offset      -- gpeekByteOff' wrapped to peek into subtrees.
+              --(offs1,offs2) = splitAt n1 offsets               -- Offsets for the left and right part of the tree.
+              peeker n_ix = gpeekByteOff' n_ix t ptr offset      -- gpeekByteOff' wrapped to peek into subtrees.
     -- Tree like traversal for writing the type.
-    gpokeByteOff' offsets ptr offset (x :*: y) = if is_ok then peeker offs1 x >> peeker offs2 y else error_action
+    {-#INLINE gpokeByteOff' #-}
+    gpokeByteOff' ix t ptr offset (x :*: y) = (peeker (ix-n2) x) >> (peeker ix y)
         where n1 = gnumberOf' (undefined :: f a)               -- Number of elements for the left part of the tree.
               n2 = gnumberOf' (undefined :: g a)               -- Number of elements for the right part of the tree.
-              is_ok = n1+n2 == length offsets                  -- Check if offset number is the same as the number of subelements.
+              is_ok = True -- n1+n2 == ix                  -- Check if offset number is the same as the number of subelements.
               error_action = error "Foreign.Storable.Generic.Internal.gpokeByteOff': Mismatch between number of fields and number of offsets"
-              (offs1,offs2) = splitAt n1 offsets               -- Offsets for the left and right part of the tree.
-              peeker offs z = gpokeByteOff' offs ptr offset z  -- gpokeByteOff' wrapped to peek into the subtree
-
-
-
+              --(offs1,offs2) = splitAt n1 offsets               -- Offsets for the left and right part of the tree.
+              peeker n_ix z = gpokeByteOff' n_ix t ptr offset z  -- gpokeByteOff' wrapped to peek into the subtree
 
     gnumberOf' _ = gnumberOf' (undefined :: f a) + gnumberOf' (undefined :: g a)
     -- Concatenate the lists. 
@@ -93,10 +110,13 @@ instance (GStorable' f, GStorable' g) => GStorable' (f :*: g) where
     glistAlignment' _ = glistAlignment' (undefined :: f a) ++ glistAlignment' (undefined :: g a)
 
 instance (GStorable a) => GStorable' (K1 i a) where
-    gpeekByteOff' [off1]  ptr offset = K1 <$> gpeekByteOff ptr (off1 + offset) 
-    gpeekByteOff' offsets ptr offset = error "Foreign.Storable.Generic.Internal.gpeekByteOff': Incorrect number of field offsets for K1"    
-    gpokeByteOff' [off1]  ptr offset (K1 x) = gpokeByteOff ptr (off1 + offset) x
-    gpokeByteOff' offsets ptr offset (K1 x) = error "Foreign.Storable.Generic.Internal.gpokeByteOff': Incorrect number of field offsets for K1"
+    -- gpeekByteOff' :: (GStorable' g) => Int -> g q -> Ptr b -> Int -> IO (K1 i a p)
+    gpeekByteOff' ix (t :: g p) ptr offset = K1 <$> gpeekByteOff ptr (off1 + offset)
+        where off1 = internalGetOffset t ix 
+    -- gpeekByteOff' offsets ptr offset = error "Foreign.Storable.Generic.Internal.gpeekByteOff': Incorrect number of field offsets for K1"    
+    gpokeByteOff' ix (t :: g p)  ptr offset (K1 x) = gpokeByteOff ptr (off1 + offset) x
+        where off1 = internalGetOffset t ix 
+    -- gpokeByteOff' offsets ptr offset (K1 x) = error "Foreign.Storable.Generic.Internal.gpokeByteOff': Incorrect number of field offsets for K1"
 
 
     -- When we use the contructor, just return one.
@@ -129,21 +149,23 @@ internalAlignment  _  = calcAlignment aligns
     where aligns = glistAlignment' (undefined :: f p)
 
 -- | View the variable under a pointer, with offset.
-internalPeekByteOff :: forall f p b. (GStorable' f) 
+internalPeekByteOff :: forall f p b. (GStorable' f,KnownNat (NoFields (f))) 
                     => Ptr b    -- ^ Pointer to peek 
                     -> Int      -- ^ Offset 
                     -> IO (f p) -- ^ Resulting generic representation
-internalPeekByteOff ptr off  = gpeekByteOff' offsets ptr off
+internalPeekByteOff ptr off  = gpeekByteOff' (ix-1) (undefined :: f p) ptr off
     where offsets = internalOffsets (undefined :: f p)
+          ix      = getNoFields (undefined :: f p)
 
 -- | Write the variable under the pointer, with offset.
-internalPokeByteOff :: forall f p b. (GStorable' f) 
+internalPokeByteOff :: forall f p b. (GStorable' f,KnownNat (NoFields (f))) 
                     => Ptr b -- ^ Pointer to write to
                     -> Int   -- ^ Offset 
                     -> f p   -- ^ Written generic representation 
                     -> IO () 
-internalPokeByteOff ptr off rep = gpokeByteOff' offsets ptr off rep
+internalPokeByteOff ptr off rep = gpokeByteOff' (ix-1) (undefined :: f p) ptr off rep
     where offsets = internalOffsets (undefined :: f p)
+          ix      = getNoFields (undefined :: f p)
 
 internalOffsets :: forall f p. (GStorable' f)
                 => f p
@@ -152,6 +174,15 @@ internalOffsets _ = calcOffsets $ zip sizes aligns ++ [(0 ,max_align)]
     where sizes = glistSizeOf'    (undefined :: f p)
           aligns= glistAlignment' (undefined :: f p)
           max_align = calcAlignment aligns
+
+{-#INLINE internalGetOffset #-}
+internalGetOffset :: forall f p. (GStorable' f, KnownNat (NoFields (f)))
+                  => f p
+                  -> Int
+                  -> Int
+internalGetOffset _ ix = caseN size offsets ix 
+    where size    = getNoFields     (undefined :: f p)
+          offsets = internalOffsets (undefined :: f p)
 
 -- | The class uses the default Generic based implementations to 
 -- provide Storable instances for types made from primitive types.
@@ -175,17 +206,19 @@ class GStorable a where
     gpeekByteOff :: Ptr b -- ^ Pointer to the variable
                  -> Int   -- ^ Offset
                  -> IO a  -- ^ Returned variable.
-    default gpeekByteOff :: (Generic a, GStorable' (Rep a))
+    default gpeekByteOff :: (Generic a, GStorable' (Rep a), KnownNat (NoFields (Rep a)))
                          => Ptr b -> Int -> IO a
-    gpeekByteOff ptr offset = to <$> internalPeekByteOff ptr offset
+    {-# INLINE gpeekByteOff #-}
+    gpeekByteOff ptr offset = to <$> (internalPeekByteOff ptr offset)
 
 -- | Write the variable to a pointer. 
     gpokeByteOff :: Ptr b -- ^ Pointer to the variable. 
                  -> Int   -- ^ Offset.
                  -> a     -- ^ The variable
                  -> IO ()
-    default gpokeByteOff :: (Generic a, GStorable' (Rep a))
+    default gpokeByteOff :: (Generic a, GStorable' (Rep a), KnownNat (NoFields (Rep a)))
                          => Ptr b -> Int -> a -> IO ()
+    --{-# INLINE gpokeByteOff #-}
     gpokeByteOff ptr offset x = internalPokeByteOff ptr offset (from x)
 
 
