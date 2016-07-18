@@ -249,4 +249,4 @@ class GStorable a where
     default getOffset :: (Generic a, GStorable' (Rep a), KnownNat (NoFields (Rep a)) ) => a -> Int -> Int
     getOffset _ ix = caseN size offsets ix
         where size    = getNoFields (undefined :: a)
-              offsets = inline $ glistAlignment' (undefined :: Rep a p)
+              offsets = inline $ internalOffsets (undefined :: Rep a p)
