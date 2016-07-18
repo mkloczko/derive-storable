@@ -185,7 +185,7 @@ internalPokeByteOff t ptr off rep = gpokeByteOff' (ix-1) t ptr off rep
 internalOffsets :: forall f p. (GStorable' f)
                 => f p
                 -> [Int]
-internalOffsets _ = aligns -- calcOffsets $ zip sizes aligns ++ [(0 ,max_align)]
+internalOffsets _ = calcOffsets $ zip sizes aligns ++ [(0 ,max_align)]
     where sizes = glistSizeOf'    (undefined :: f p)
           aligns= glistAlignment' (undefined :: f p)
           max_align = calcAlignment aligns
