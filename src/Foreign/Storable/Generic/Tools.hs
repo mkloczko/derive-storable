@@ -29,19 +29,20 @@ type Offset    = Int
 
 -- | Calculates the memory offset of type's/struct's fields.
 -- The second argument is a list of sizes and aligments of the type's/struct's fields.
-calcOffsets :: [(Size, Alignment)]  -- ^ List of sizes and aligments of the type's/struct's fields. [(Int,Int)]
-            -> [Offset]             -- ^ List representing the offests of the type's/struct's fields. [Int]
-calcOffsets []         = []
-calcOffsets size_align = calcOffsets' align filling 0 [0]
-    where filling = getFilling size_align
-          align = maximum $ map snd size_align
+calcOffsets :: [(Size,Alignment)] -> [Offset]
+calcOffsets ls = reverse $ calcOffsets_cps (\x -> (x : [0], x) ) (getFilling ls)
 
-calcOffsets' :: Alignment -> [Filling] -> Offset -> [Offset] -> [Offset]
-calcOffsets' align []                     offset (_:acc) = reverse acc
-calcOffsets' align (Size s: Padding p:fs) offset acc = calcOffsets' align fs new_offset (new_offset : acc)
-    where new_offset = s + p + offset 
-calcOffsets' align (Size s:fs)            offset acc = calcOffsets' align fs new_offset (new_offset : acc)
-    where new_offset = s + offset
+
+calcOffsets_cps :: (Int -> ([Offset], Offset) ) -> [Filling] -> [Offset]
+calcOffsets_cps cont (Size s: Padding p:fs) = calcOffsets_cps new_cont fs
+    where new_cont x = do
+              let (offs, last_off) = cont (s+p) 
+              (last_off + x : offs, last_off + x)
+calcOffsets_cps cont (Size s:fs)      = calcOffsets_cps new_cont fs
+    where new_cont x = do
+              let (offs, last_off) = cont s 
+              (last_off + x : offs, last_off + x)
+calcOffsets_cps cont _ = drop 2 $ fst $ cont 0  
 
 
 -- | Calculates the size of the type/struct.
