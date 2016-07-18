@@ -29,7 +29,6 @@ import Data.Int
 import Debug.Trace
 import Foreign.Storable.Generic.Tools
 
-import Control.DeepSeq
 import System.IO.Unsafe
 
 -- Defining the generics ---

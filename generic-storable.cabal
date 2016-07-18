@@ -48,16 +48,17 @@ cabal-version:       >=1.10
 
 library
   -- Modules exported by the library.
-  exposed-modules:     Foreign.Storable.Tuple, Foreign.Storable.Generic, Foreign.Storable.Generic.Tools, Foreign.Storable.Generic.Internal, Foreign.Storable.Generic.Instances, Foreign.Storable.Generic.Internal.TypeFuns, Foreign.Storable.Generic.Internal.Case 
+
+  exposed-modules:     Foreign.Storable.Tuple, Foreign.Storable.Generic, Foreign.Storable.Generic.Tools
+                     , Foreign.Storable.Generic.Internal, Foreign.Storable.Generic.Instances
+                     , Foreign.Storable.Generic.Internal.TypeFuns, Foreign.Storable.Generic.Internal.Case 
   
-  -- Modules included in this library but not exported.
-         
   
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:    
   
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.8 && <4.10, deepseq
+  build-depends:       base >=4.8 && <4.10
   
   -- Directories containing source files.
   hs-source-dirs:      src
