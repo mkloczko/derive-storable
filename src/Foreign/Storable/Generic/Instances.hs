@@ -17,6 +17,8 @@ instance GStorable Type where   \
 ;   galignment   = alignment    \
 ;   gpeekByteOff = peekByteOff  \
 ;   gpokeByteOff = pokeByteOff  \
+;   getOffset _ _= 0            \
+;   getNoFields _= 0            \
 
 -- Haskell primitives
 MakeGStorable(Bool)

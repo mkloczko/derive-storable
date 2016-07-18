@@ -14,6 +14,6 @@ type family NoFields (f :: * -> *) :: Nat where
     NoFields (M1 i c f)  =  NoFields f
     NoFields a           = TypeError (Text "Could not calculate the number of fields for the given type.\n\t I got stuck at: " :<>: ShowType a)
 
-{-# INLINE getNoFields #-}
-getNoFields :: forall f p. (KnownNat (NoFields (f))) => f p -> Int
-getNoFields _ = fromIntegral $ inline $ natVal (Proxy :: Proxy (NoFields f )) 
+-- {-# INLINE getNoFields #-}
+-- getNoFields :: forall f p. (KnownNat (NoFields (f))) => f p -> Int
+-- getNoFields _ = fromIntegral $ inline $ natVal (Proxy :: Proxy (NoFields f )) 
