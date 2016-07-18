@@ -50,7 +50,7 @@ caseN _ ls ix = ls !! ix
   "caseN/1" forall ls ix. caseN 1 ls ix = case1 ls ix;  
   "caseN/2" forall ls ix. caseN 2 ls ix = case2 ls ix;  
   "caseN/3" forall ls ix. caseN 3 ls ix = case3 ls ix;
-  "caseN/4" forall ls ix. caseN 4 ls ix = case3 ls ix;
-  "caseN/5" forall ls ix. caseN 5 ls ix = case3 ls ix;
+  "caseN/4" forall ls ix. caseN 4 ls ix = case4 ls ix;
+  "caseN/5" forall ls ix. caseN 5 ls ix = case5 ls ix;
   -- Let the hack begin!
   #-}
