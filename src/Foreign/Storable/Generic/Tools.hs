@@ -6,7 +6,7 @@
 {-#LANGUAGE TypeOperators #-}
 {-#LANGUAGE ScopedTypeVariables #-}
 {-#LANGUAGE UndecidableInstances #-}
-
+{-#OPTIONS_GHC -fno-spec-constr #-}
 module Foreign.Storable.Generic.Tools (
     Filling (..), 
     getFilling,

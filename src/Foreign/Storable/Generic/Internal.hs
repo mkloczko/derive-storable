@@ -11,6 +11,7 @@
 {-#LANGUAGE AllowAmbiguousTypes #-}
 
 {-#LANGUAGE BangPatterns #-}
+{-#OPTIONS_GHC -fno-spec-constr #-}
 
 module Foreign.Storable.Generic.Internal where
 
@@ -181,27 +182,24 @@ internalPokeByteOff t ptr off rep = gpokeByteOff' (ix-1) t ptr off rep
           ix      = gnumberOf' (undefined :: Rep a p) -- gnumberOf' (undefined :: f p)
           is_ok  expr = if ix /= getNoFields (undefined :: a) then error "Nooo!" else expr
 
+---------------------------------------
+------------The problem----------------
+---------------------------------------
+
 -- {-# INLINE internalOffsets #-}
 internalOffsets :: forall f p. (GStorable' f)
                 => f p
                 -> [Int]
-internalOffsets _ = calcOffsets $ zip sizes aligns ++ [(0 ,max_align)]
+                -- should work with calcOffsets!!
+internalOffsets _ = aligns -- calcOffsets $ zip sizes aligns ++ [(0 ,max_align)]
     where sizes = glistSizeOf'    (undefined :: f p)
           aligns= glistAlignment' (undefined :: f p)
           max_align = calcAlignment aligns
 
--- {-#INLINE internalGetOffset #-}
--- internalGetOffset :: forall f p. (GStorable' f, KnownNat (NoFields (f)))
---                   => f p
---                   -> Int
---                   -> Int
--- internalGetOffset _ ix = caseN size offsets ix 
---     -- where size    = (gnumberOf'    (undefined :: f p))
---     where size    = getNoFields (undefined :: f p) -- !?! getNoFields vs gnumberOf' - change in behaviour!11
---           is_ok  expr = if size /= getNoFields (undefined :: f p) then error "Nooo!" else expr
---           offsets = inline $ glistAlignment' (undefined :: f p) -- internalOffsets (undefined :: f p) -- needs this ? for caseN rules to fire?...
---           -- offsets = [3,3,3] -- internalOffsets (undefined :: f p)
---           --       CHange this to 3 - fail!
+-------------
+-------------
+-------------
+
 
 -- | The class uses the default Generic based implementations to 
 -- provide Storable instances for types made from primitive types.

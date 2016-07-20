@@ -42,15 +42,12 @@ case5 (a:b:c:d:e:rest) ix = case ix of
     4 -> e
     _ -> error ("case5 used outside it's scope " ++ show ix) undefined 
 
-{-# NOINLINE caseN #-}
+{-# INLINE caseN #-}
 caseN :: Int -> [a] -> Int -> a
+caseN 1 ls ix = case1 ls ix
+caseN 2 ls ix = case2 ls ix
+caseN 3 ls ix = case3 ls ix
+caseN 4 ls ix = case4 ls ix
+caseN 5 ls ix = case5 ls ix
 caseN _ ls ix = ls !! ix
 
-{-# RULES
-  "caseN/1" forall ls ix. caseN 1 ls ix = case1 ls ix;  
-  "caseN/2" forall ls ix. caseN 2 ls ix = case2 ls ix;  
-  "caseN/3" forall ls ix. caseN 3 ls ix = case3 ls ix;
-  "caseN/4" forall ls ix. caseN 4 ls ix = case4 ls ix;
-  "caseN/5" forall ls ix. caseN 5 ls ix = case5 ls ix;
-  -- Let the hack begin!
-  #-}
