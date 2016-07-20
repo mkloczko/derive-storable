@@ -12,6 +12,8 @@
 
 {-#LANGUAGE BangPatterns #-}
 
+{-#OPTIONS_GHC -fno-spec-constr #-}
+
 module Foreign.Storable.Generic.Internal where
 
 import GHC.Generics
