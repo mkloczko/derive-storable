@@ -30,19 +30,19 @@ type Offset    = Int
 -- | Calculates the memory offset of type's/struct's fields.
 -- The second argument is a list of sizes and aligments of the type's/struct's fields.
 calcOffsets :: [(Size,Alignment)] -> [Offset]
-calcOffsets ls = reverse $ calcOffsets_cps (\x -> (x : [0], x) ) (getFilling ls)
+calcOffsets ls = reverse $ calcOffsets_cps (\(s,a) -> ([0], s) ) ls
 
 
-calcOffsets_cps :: (Int -> ([Offset], Offset) ) -> [Filling] -> [Offset]
-calcOffsets_cps cont (Size s: Padding p:fs) = calcOffsets_cps new_cont fs
-    where new_cont x = do
-              let (offs, last_off) = cont (s+p) 
-              (last_off + x : offs, last_off + x)
-calcOffsets_cps cont (Size s:fs)      = calcOffsets_cps new_cont fs
-    where new_cont x = do
-              let (offs, last_off) = cont s 
-              (last_off + x : offs, last_off + x)
-calcOffsets_cps cont _ = drop 2 $ fst $ cont 0  
+calcOffsets_cps :: ((Size, Alignment) -> ([Offset], Offset) ) -> [(Size,Alignment)] -> [Offset]
+calcOffsets_cps cont []  = []
+calcOffsets_cps cont [x] = fst $ cont x
+calcOffsets_cps cont ((s, a):fs) = calcOffsets_cps new_cont fs
+    where new_cont (s2,a2) = do
+              let (offs, inter) = cont (s,a)
+                  p = (a2 - inter)  `mod` a2
+                  last_off = inter + p
+              (last_off : offs, last_off + s2)
+-- calcOffsets_cps cont _ = drop 2 $ fst $ cont 0  
 
 
 -- | Calculates the size of the type/struct.
