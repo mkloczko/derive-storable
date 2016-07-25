@@ -40,7 +40,8 @@ spec = do
     describe "internalPeekByteOff" $ do
         it "is equal to: gpeekByteOff' (internalOffsets a) ptr off" $ do
             property (\((NestedToType (GenericType (val :: f p))) :: NestedToType 4) -> do
-                let size = internalSizeOf val
+                let size      = internalSizeOf val
+                    no_fields = gnumberOf' (undefined :: f p)
                 off <- generate $ suchThat arbitrary (\x -> x>=0 && x < 100)
                 
                 -- Area in memory to peek
@@ -50,7 +51,7 @@ spec = do
                 
                 -- first peek
                 v1 <- internalPeekByteOff ptr off :: IO (f p)
-                v2 <- gpeekByteOff' (internalOffsets val) ptr off :: IO (f p)
+                v2 <- gpeekByteOff' (internalOffsets val) (no_fields - 1) ptr off :: IO (f p)
                 
                 free ptr
                 v1 `shouldBe` v2
@@ -88,6 +89,7 @@ spec = do
         it "is equal to: gpokeByteOff' (internalOffsets a) ptr off v" $ do
             property (\((NestedToType (GenericType (val :: f p))) :: NestedToType 4)  -> do
                 let size = internalSizeOf val
+                    no_fields = gnumberOf' (undefined :: f p)
                 off <- generate $ suchThat arbitrary (\x -> x>=0 && x < 100)
                 
                 -- Area in memory to poke
@@ -98,7 +100,7 @@ spec = do
                 bytes1 <- peekArray (off + size) ptr :: IO [Word8]
                 
                 -- second poke
-                gpokeByteOff' (internalOffsets val) ptr off val
+                gpokeByteOff' (internalOffsets val) (no_fields - 1) ptr off val
                 bytes2 <- peekArray (off + size) ptr :: IO [Word8]
  
                 free ptr

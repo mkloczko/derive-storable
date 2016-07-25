@@ -231,10 +231,10 @@ toGenericType types = foldl1 typeProduct types
 instance {-#OVERLAPS#-} (GStorable' f) => GStorable' (K1 i (f p)) where
     glistSizeOf'    _ = [internalSizeOf (undefined :: f p)]
     glistAlignment' _ = [internalAlignment (undefined :: f p)]
-    gpeekByteOff' [f_off] ptr off   = K1 <$> internalPeekByteOff ptr (off + f_off)
-    gpeekByteOff' offs ptr off   = error "Mismatch between number of offsets and fields"
-    gpokeByteOff' [f_off] ptr off (K1 v) = internalPokeByteOff ptr (off + f_off) v
-    gpokeByteOff' offs ptr off v  = error "Mismatch between number of offsets and fields"
+    gpeekByteOff' offs n ptr off   = K1 <$> internalPeekByteOff ptr (off + f_off)
+        where f_off = offs !! n
+    gpokeByteOff' offs n ptr off (K1 v) = internalPokeByteOff ptr (off + f_off) v
+        where f_off = offs !! n
     gnumberOf'      _  = 1
 
 -- | Helps with avoiding NaN problem. 

@@ -34,12 +34,14 @@ class GStorable' f where
     -- | Read the element at a given offset. Additional information about the offests 
     -- of the subfields are needed.
     gpeekByteOff' :: [Int]    -- ^ List of fields' offsets for the type/struct. 
+                  -> Int      -- ^ The index. Used to obtain the correct offset
                   -> Ptr b    -- ^ The pointer to the type/struct.
                   -> Int      -- ^ Global offset.
                   -> IO (f a) -- ^ The result, wrapped in GHC.Generic metadata.
     -- | Write the element at a given offset. Additional information about the offests 
     -- of the subfields are needed.
     gpokeByteOff' :: [Int]  -- ^ List of fields' offsets for the type/struct.
+                  -> Int    -- ^ The index. Used to obtain the correct offset.
                   -> Ptr b  -- ^ The pointer to the type/struct.
                   -> Int    -- ^ Global offset.
                   -> (f a)  -- ^ The element to write, wrapped in GHC.Generic metadata.
@@ -60,9 +62,9 @@ class GStorable' f where
 
 instance (GStorable' f) => GStorable' (M1 i t f) where
     -- Wrap the peeked value in metadata.
-    gpeekByteOff' offsets ptr offset = M1 <$> gpeekByteOff' offsets ptr offset
+    gpeekByteOff' offsets ix ptr offset = M1 <$> gpeekByteOff' offsets ix ptr offset
     -- Discard the metadata and go further.
-    gpokeByteOff' offsets ptr offset (M1 x) = gpokeByteOff' offsets ptr offset x 
+    gpokeByteOff' offsets ix ptr offset (M1 x) = gpokeByteOff' offsets ix ptr offset x 
     
 
     gnumberOf' (M1 v) = gnumberOf' v
@@ -75,21 +77,15 @@ instance (GStorable' f) => GStorable' (M1 i t f) where
 
 instance (GStorable' f, GStorable' g) => GStorable' (f :*: g) where
     -- Tree-like traversal for reading the type.
-    gpeekByteOff' offsets ptr offset = if is_ok then (:*:) <$> peeker offs1 <*>  peeker offs2 else error_action
-        where n1 = gnumberOf' (undefined :: f a)               -- Number of elements for the left part of the tree.
-              n2 = gnumberOf' (undefined :: g a)               -- Number of elements for the right part of the tree
-              is_ok = n1+n2 == length offsets                  -- Check if offset number is the same as the number of subelements.
-              error_action = error "Foreign.Storable.Generic.Internal.gpeekByteOff': Mismatch between number of fields and number of offsets"
-              (offs1,offs2) = splitAt n1 offsets               -- Offsets for the left and right part of the tree.
-              peeker offs = gpeekByteOff' offs ptr offset      -- gpeekByteOff' wrapped to peek into subtrees.
+    gpeekByteOff' offsets ix ptr offset = (:*:) <$> peeker new_ix <*>  peeker ix
+        where new_ix =  ix - n2                                        -- The new index for the left part of the tree.
+              n2 = gnumberOf' (undefined :: g a)                       -- Number of elements for the right part of the tree
+              peeker n_ix = gpeekByteOff' offsets n_ix ptr offset      -- gpeekByteOff' wrapped to peek into subtrees.
     -- Tree like traversal for writing the type.
-    gpokeByteOff' offsets ptr offset (x :*: y) = if is_ok then peeker offs1 x >> peeker offs2 y else error_action
-        where n1 = gnumberOf' (undefined :: f a)               -- Number of elements for the left part of the tree.
+    gpokeByteOff' offsets ix ptr offset (x :*: y) = peeker new_ix x >> peeker ix y
+        where new_ix = ix - n2                                 
               n2 = gnumberOf' (undefined :: g a)               -- Number of elements for the right part of the tree.
-              is_ok = n1+n2 == length offsets                  -- Check if offset number is the same as the number of subelements.
-              error_action = error "Foreign.Storable.Generic.Internal.gpokeByteOff': Mismatch between number of fields and number of offsets"
-              (offs1,offs2) = splitAt n1 offsets               -- Offsets for the left and right part of the tree.
-              peeker offs z = gpokeByteOff' offs ptr offset z  -- gpokeByteOff' wrapped to peek into the subtree
+              peeker n_ix z = gpokeByteOff' offsets n_ix ptr offset z  -- gpokeByteOff' wrapped to peek into the subtree
 
 
 
@@ -101,10 +97,10 @@ instance (GStorable' f, GStorable' g) => GStorable' (f :*: g) where
     glistAlignment' _ = glistAlignment' (undefined :: f a) ++ glistAlignment' (undefined :: g a)
 
 instance (GStorable a) => GStorable' (K1 i a) where
-    gpeekByteOff' [off1]  ptr offset = K1 <$> gpeekByteOff ptr (off1 + offset) 
-    gpeekByteOff' offsets ptr offset = error "Foreign.Storable.Generic.Internal.gpeekByteOff': Incorrect number of field offsets for K1"    
-    gpokeByteOff' [off1]  ptr offset (K1 x) = gpokeByteOff ptr (off1 + offset) x
-    gpokeByteOff' offsets ptr offset (K1 x) = error "Foreign.Storable.Generic.Internal.gpokeByteOff': Incorrect number of field offsets for K1"
+    gpeekByteOff' offsets ix ptr offset = K1 <$> gpeekByteOff ptr (off1 + offset)
+        where off1 = offsets !! ix 
+    gpokeByteOff' offsets ix ptr offset (K1 x) = gpokeByteOff ptr (off1 + offset) x
+        where off1 = offsets !! ix 
 
 
     -- When we use the contructor, just return one.
@@ -140,8 +136,9 @@ internalPeekByteOff :: forall f p b. (GStorable' f)
                     => Ptr b    -- ^ Pointer to peek 
                     -> Offset   -- ^ Offset 
                     -> IO (f p) -- ^ Resulting generic representation
-internalPeekByteOff ptr off  = gpeekByteOff' offsets ptr off
+internalPeekByteOff ptr off  = gpeekByteOff' offsets ix ptr off
     where offsets = internalOffsets (undefined :: f p)
+          ix      = gnumberOf' (undefined :: f p) - 1
 
 -- | Write the variable under the pointer, with offset.
 internalPokeByteOff :: forall f p b. (GStorable' f) 
@@ -149,8 +146,9 @@ internalPokeByteOff :: forall f p b. (GStorable' f)
                     -> Offset -- ^ Offset 
                     -> f p    -- ^ Written generic representation 
                     -> IO () 
-internalPokeByteOff ptr off rep = gpokeByteOff' offsets ptr off rep
+internalPokeByteOff ptr off rep = gpokeByteOff' offsets ix ptr off rep
     where offsets = internalOffsets (undefined :: f p)
+          ix      = gnumberOf' (undefined :: f p) - 1
 
 -- | Obtain the list of offsets
 internalOffsets :: forall f p. (GStorable' f)

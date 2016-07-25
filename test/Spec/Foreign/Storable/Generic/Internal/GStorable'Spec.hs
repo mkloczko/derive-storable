@@ -64,12 +64,13 @@ spec = do
                 gnumberOf' (val1 :*: val2 ) `shouldBe` (gnumberOf' val1 + gnumberOf' val2) 
                 )
     describe "gpeekByteOff' " $ do
-        it "instance M1    is equal to: M1 <$> gpeekByteOff' offs ptr off" $ do
+        it "instance M1    is equal to: M1 <$> gpeekByteOff' offs ix ptr off" $ do
             property (\(GenericType (val :: f p)) -> do                
-                let size = internalSizeOf  val
-                    offs = internalOffsets val
-                -- Get the offsets to test
-                off   <- generate $ suchThat arbitrary (>=0)
+                let size      = internalSizeOf  val
+                    offs      = internalOffsets val
+                    no_fields = gnumberOf' (undefined :: f p)
+                -- Random global offset
+                off   <- generate $ suchThat arbitrary (\x -> x>=0 && x < 100)
 
                 -- Reserve some memory and write some data to it.
                 ptr    <- mallocBytes (off + size)
@@ -77,10 +78,10 @@ spec = do
                 pokeArray ptr values
 
                 -- Check:
-                -- Left side
-                v1 <- gpeekByteOff' offs ptr off     :: IO (M1 i c f p)
-                -- Right side
-                v2 <- gpeekByteOff' offs ptr off     :: IO (f p)
+                -- With M1
+                v1 <- gpeekByteOff' offs (no_fields - 1) ptr off     :: IO (M1 i c f p)
+                -- Without M1
+                v2 <- gpeekByteOff' offs (no_fields - 1) ptr off     :: IO (f p)
                 free ptr
 
                 v1 `shouldBe` M1 v2
@@ -88,7 +89,7 @@ spec = do
         it "instance K1    is equal to: K1 <$> internalPeekByteOff ptr (f_off + off) val" $ do
             property (\(GenericType (val :: f p)) -> do
                 let size = internalSizeOf val
-                -- Get the offsets to test
+                -- Random global offsets and field offset
                 f_off <- generate $ suchThat arbitrary (>=0) 
                 off   <- generate $ suchThat arbitrary (>=0)
 
@@ -98,24 +99,25 @@ spec = do
                 pokeArray ptr values
                
                 -- Check:
-                -- Left side
-                v1 <- gpeekByteOff' [f_off] ptr off     :: IO (K1 i (f p) p)
-                -- Right side
+                -- With K1
+                v1 <- gpeekByteOff' [f_off] 0 ptr off     :: IO (K1 i (f p) p)
+                -- Without K1
                 v2 <- internalPeekByteOff ptr (f_off + off) :: IO (f p)
                 free ptr
 
                 v1 `shouldBe` K1 v2
 
                 )
-        it "instance (:*:) is equal to: (:*:) <$> peeker offs_l <*> peeker offs_r  \n\
-            \                                where peeker my_offs   = gpeekByteOff' my_offs ptr off \n\
-            \                                      (offs_l, offs_r) = splitAt (gnumberOf' (undefined :: f p)) offs" $ do
+        it "instance (:*:) is equal to: (:*:) <$> peeker (ix - n2) <*> peeker ix  \n\
+            \                                where peeker n_ix   = gpeekByteOff' offsets n_ix ptr off \n" $ do
             property (\(GenericType (val1 :: f p)) (GenericType (val2 :: g p)) -> do                
-                let offsets = internalOffsets (undefined :: (:*:) f g p)
-                    (offs_l, offs_r) = splitAt (gnumberOf' val1) offsets
-                    size    = internalSizeOf (undefined :: (:*:) f g p)
+                let offsets   = internalOffsets (undefined :: (:*:) f g p)
+                    size      = internalSizeOf (undefined :: (:*:) f g p)
+                    no_fields = gnumberOf' (undefined :: (:*:) f g p)
+                    n2        = gnumberOf' (undefined :: g p)
 
-                -- Get the offsets to test
+
+                -- Random global offset
                 off   <- generate $ suchThat arbitrary (>=0)
 
                 -- Reserve some memory and write some data to it.
@@ -125,39 +127,33 @@ spec = do
 
                 -- Check:
                 -- Left side
-                v1 <- gpeekByteOff' offsets ptr off      :: IO ((:*:) f g p)
+                v1   <- gpeekByteOff' offsets (no_fields - 1)      ptr off :: IO ((:*:) f g p)
                 -- Right side
-                v2_a <- gpeekByteOff' offs_l ptr off   :: IO (f p)
-                v2_b <- gpeekByteOff' offs_r ptr off  :: IO (g p)
+                v2_a <- gpeekByteOff' offsets (no_fields - 1 - n2) ptr off :: IO (f p)
+                v2_b <- gpeekByteOff' offsets (no_fields - 1)      ptr off :: IO (g p)
                 free ptr
 
                 v1 `shouldBe` (v2_a :*: v2_b)
                 )
-        it "instance K1    crashes when length of supplied offsets /= 1" $ do 
+        it "crashes when ix /= number of fields" $ do 
             property (\(GenericType (val1 :: f p)) -> do
-                to_gen <- generate $ suchThat arbitrary (\v -> (v/=1)  && (v>=0) )
-                offs   <- generate $ vector to_gen
-
-                ptr <- mallocBytes $ internalSizeOf (undefined :: K1 i (f p) p)
-                (gpeekByteOff' offs ptr 0 :: IO (K1 i (f p) p)) `shouldThrow` anyException
-                free ptr
-                )
-        it "instance (:*:) crashes when length of supplied offsets /= no. of fields" $ do 
-            property (\(GenericType (_ :: f p)) (GenericType (_ :: g p)) -> do
-                let org_offs = internalOffsets (undefined :: (:*:) f g p)
-                    len      = length org_offs
-                to_gen <- generate $ suchThat arbitrary (\v -> (v/=len)  && (v>=0) )
-                offs   <- generate $ vector to_gen
-
-                ptr <- mallocBytes $ internalSizeOf (undefined :: f p)
-                (gpeekByteOff' offs ptr 0 :: IO ((:*:) f g p)) `shouldThrow` anyException
+                let offsets   = internalOffsets val1
+                    no_fields = gnumberOf' val1 
+                -- The bad index    
+                bad_ix <- generate $ suchThat arbitrary (/=no_fields)
+                -- Poked area
+                ptr <- mallocBytes $ internalSizeOf val1
+                -- The test
+                (gpeekByteOff' offsets bad_ix ptr 0 :: IO (f p)) `shouldThrow` anyException
+                -- Freeing the pointer
                 free ptr
                 )
     describe "gpokeByteOff' " $ do
-        it "instance M1    is equal to: gpokeByteOff' offs ptr off val" $ do
+        it "instance M1    is equal to: gpokeByteOff' offs ix ptr off val" $ do
             property (\(GenericType (val :: f p)) -> do
                 let size    = internalSizeOf val
                     offsets = internalOffsets val 
+                    no_fields= gnumberOf' (undefined :: f p)
                 -- Get the offsets to test
                 off   <- generate $ suchThat arbitrary (>=0)
 
@@ -165,18 +161,20 @@ spec = do
                 ptr    <- mallocBytes (off + size)
                 
                 -- First test
-                gpokeByteOff' offsets ptr off (M1 val)
+                -- With M1
+                gpokeByteOff' offsets (no_fields - 1) ptr off (M1 val)
                 bytes1 <- peekArray (off + size) ptr :: IO [Word8]
               
-                --Second test
-                gpokeByteOff' offsets ptr off val
+                -- Second test
+                -- Without M1
+                gpokeByteOff' offsets (no_fields - 1) ptr off val
                 bytes2 <- peekArray (off + size) ptr :: IO [Word8]
          
                 free ptr
                 -- Check:
                 bytes1 `shouldBe` bytes2
                 )
-        it "instance K1    is equal to: internalByteOff ptr (f_off + off) val" $ do
+        it "instance K1    is equal to: internalPokeByteOff ptr (f_off + off) val" $ do
             property (\(GenericType (val :: f p)) -> do
                 let size = internalSizeOf val
                 -- Get the offsets to test
@@ -187,10 +185,12 @@ spec = do
                 ptr    <- mallocBytes (f_off + off + size)
                 
                 -- First test
-                gpokeByteOff' [f_off] ptr off (K1 val)
+                -- With K1
+                gpokeByteOff' [f_off] 0 ptr off (K1 val)
                 bytes1 <- peekArray (f_off + off + size) ptr :: IO [Word8]
               
-                --Second test
+                -- Second test
+                -- Without K1
                 internalPokeByteOff ptr (f_off + off) val
                 bytes2 <- peekArray (f_off + off + size) ptr :: IO [Word8]
          
@@ -198,13 +198,13 @@ spec = do
                 -- Check:
                 bytes1 `shouldBe` bytes2
                 )
-        it "instance (:*:) is equal to: (:*:) <$> poker offs_l a <*> poker offs_r b \n\
-            \                                where poker my_offs v  = gpokeByteOff' my_offs ptr off v \n\
-            \                                      (offs_l, offs_r) = splitAt (gnumberOf' a) offs" $ do
+        it "instance (:*:) is equal to: (:*:) <$> poker (ix - n2) a <*> poker ix b \n\
+            \                                where poker n_ix v  = gpokeByteOff' offsets n_ix ptr off v" $ do
             property (\(GenericType (val1 :: f p)) (GenericType (val2 :: g p)) -> do
-                let offsets = internalOffsets (undefined :: (:*:) f g p)
-                    (offs_l, offs_r) = splitAt (gnumberOf' val1) offsets
-                    size    = internalSizeOf (undefined :: (:*:) f g p)
+                let offsets   = internalOffsets (undefined :: (:*:) f g p)
+                    no_fields = gnumberOf'      (undefined :: (:*:) f g p)
+                    n2        = gnumberOf'      (undefined :: g p        )
+                    size      = internalSizeOf  (undefined :: (:*:) f g p)
                 
                 -- Get the offset to test
                 off   <- generate $ suchThat arbitrary (>=0)
@@ -213,12 +213,14 @@ spec = do
                 ptr    <- mallocBytes (off + size)
                 
                 -- First poke
-                gpokeByteOff' offsets ptr off (val1 :*: val2)
+                -- Left part of the tree
+                gpokeByteOff' offsets (no_fields - 1) ptr off (val1 :*: val2)
                 bytes1 <- peekArray (off + size) ptr :: IO [Word8]
               
-                --Second pokes
-                gpokeByteOff' offs_l ptr off val1
-                gpokeByteOff' offs_r ptr off val2
+                -- Second pokes
+                -- Right part of the tree
+                gpokeByteOff' offsets (no_fields - 1 - n2) ptr off val1
+                gpokeByteOff' offsets (no_fields -1)       ptr off val2
                 
                 bytes2 <- peekArray (off + size) ptr :: IO [Word8]
          
@@ -226,23 +228,16 @@ spec = do
                 -- Check:
                 bytes1 `shouldBe` bytes2
                 )
-        it "instance K1    crashes when length of supplied offsets /= 1" $ do 
+        it "crashes when ix /= number of fields" $ do 
             property (\(GenericType (val1 :: f p)) -> do
-                to_gen <- generate $ suchThat arbitrary (\v -> (v/=1)  && (v>=0) )
-                offs   <- generate $ vector to_gen
-
-                ptr <- mallocBytes $ internalSizeOf (undefined :: K1 i (f p) p)
-                gpokeByteOff' offs ptr 0 (K1 val1) `shouldThrow` anyException
-                free ptr
-                )
-        it "instance (:*:) crashes when length of supplied offsets /= no. of fields" $ do 
-            property (\(GenericType (val1 :: f p)) (GenericType (val2 :: g p)) -> do
-                let org_offs = internalOffsets (undefined :: (:*:) f g p)
-                    len      = length org_offs
-                to_gen <- generate $ suchThat arbitrary (\v -> (v/=len)  && (v>=0) )
-                offs   <- generate $ vector to_gen
-
-                ptr <- mallocBytes $ internalSizeOf (undefined :: f p)
-                gpokeByteOff' offs ptr 0 (val1 :*: val2) `shouldThrow` anyException
+                let offsets   = internalOffsets val1
+                    no_fields = gnumberOf' val1 
+                -- The bad index    
+                bad_ix <- generate $ suchThat arbitrary (/=no_fields)
+                -- Poked area
+                ptr <- mallocBytes $ internalSizeOf val1
+                -- The test
+                gpokeByteOff' offsets bad_ix ptr 0 val1 `shouldThrow` anyException
+                -- Freeing the pointer
                 free ptr
                 )
