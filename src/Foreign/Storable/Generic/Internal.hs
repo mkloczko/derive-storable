@@ -6,7 +6,15 @@
 {-#LANGUAGE ScopedTypeVariables #-}
 {-#LANGUAGE UndecidableInstances #-}
 
-module Foreign.Storable.Generic.Internal where
+module Foreign.Storable.Generic.Internal (
+     GStorable'(..),
+     GStorable (..),
+     internalSizeOf,
+     internalAlignment,
+     internalPeekByteOff,
+     internalPokeByteOff,
+     internalOffsets
+  ) where
 
 import GHC.Generics
 import Foreign.Ptr
@@ -42,12 +50,12 @@ class GStorable' f where
                -> Int -- ^ Size.
 
     -- | Calculates the sizes of type's/struct's fields.
-    glistSizeOf' :: f a   -- ^ GHC.Generic information about a given type/struct. 
-                 -> [Int] -- ^ List of sizes.
+    glistSizeOf' :: f a    -- ^ GHC.Generic information about a given type/struct. 
+                 -> [Size] -- ^ List of sizes.
 
     -- | Calculates the alignments of type's/struct's fields.
-    glistAlignment' :: f a   -- ^ GHC.Generic information about a given type/struct.
-                    -> [Int] -- ^ List of alignments.
+    glistAlignment' :: f a         -- ^ GHC.Generic information about a given type/struct.
+                    -> [Alignment] -- ^ List of alignments.
 
 
 instance (GStorable' f) => GStorable' (M1 i t f) where
@@ -122,31 +130,32 @@ internalSizeOf _  = calcSize $ zip sizes aligns
 
 -- | Calculates the alignment of generic data-type.
 internalAlignment :: forall f p. (GStorable' f) 
-                  => f p -- ^ Generic representation
-                  -> Int -- ^ Resulting alignment
-internalAlignment  _  = maximum aligns
+                  => f p       -- ^ Generic representation
+                  -> Alignment -- ^ Resulting alignment
+internalAlignment  _  = calcAlignment aligns
     where aligns = glistAlignment' (undefined :: f p)
 
 -- | View the variable under a pointer, with offset.
 internalPeekByteOff :: forall f p b. (GStorable' f) 
                     => Ptr b    -- ^ Pointer to peek 
-                    -> Int      -- ^ Offset 
+                    -> Offset   -- ^ Offset 
                     -> IO (f p) -- ^ Resulting generic representation
 internalPeekByteOff ptr off  = gpeekByteOff' offsets ptr off
     where offsets = internalOffsets (undefined :: f p)
 
 -- | Write the variable under the pointer, with offset.
 internalPokeByteOff :: forall f p b. (GStorable' f) 
-                    => Ptr b -- ^ Pointer to write to
-                    -> Int   -- ^ Offset 
-                    -> f p   -- ^ Written generic representation 
+                    => Ptr b  -- ^ Pointer to write to
+                    -> Offset -- ^ Offset 
+                    -> f p    -- ^ Written generic representation 
                     -> IO () 
 internalPokeByteOff ptr off rep = gpokeByteOff' offsets ptr off rep
     where offsets = internalOffsets (undefined :: f p)
 
+-- | Obtain the list of offsets
 internalOffsets :: forall f p. (GStorable' f)
-                => f p
-                -> [Int]
+                => f p      -- Generic representation
+                -> [Offset] -- List of offsets
 internalOffsets _ = calcOffsets $ zip sizes aligns
     where sizes = glistSizeOf'    (undefined :: f p)
           aligns= glistAlignment' (undefined :: f p)

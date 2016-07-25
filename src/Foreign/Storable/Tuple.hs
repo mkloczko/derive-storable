@@ -1,4 +1,4 @@
-module Foreign.Storable.Tuple where
+module Foreign.Storable.Tuple () where
 
 import Foreign.Storable.Generic
 import Foreign.Storable

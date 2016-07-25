@@ -26,12 +26,6 @@ import System.Exit
 import Test.QuickCheck
 -- The module tests the memory alignment of Storable data-types 
 -- derived with generic-storable package. 
---
--- The module will define data-types and the corresponding C structs
-
--- If fields ok and offsets not - the value of the fields before could use only some of the bits
-
--- If the offsets are ok and fields are not -- different types ? (Int vs Unsigned int).
 
 -- Adding parametric polimorphism to reduce the boilerplate.
 class (Storable a) => Checkable a where
@@ -54,9 +48,8 @@ newStorable val = do
   return ptr
 
 goffsets :: (GStorable' (Rep a), GStorable a, Generic a) => a -> [Int16]
-goffsets v = map fromIntegral $ calcOffsets $ zip sizes alignments 
-    where sizes = glistSizeOf' (from v)
-          alignments = glistAlignment' (from v)
+goffsets v = map fromIntegral $ internalOffsets (from v)
+
 data C1 = C1 Int32 Int32
     deriving (Show, Eq, Generic, GStorable)
 

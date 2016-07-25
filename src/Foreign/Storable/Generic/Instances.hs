@@ -1,5 +1,5 @@
 {-# LANGUAGE CPP #-}
-module Foreign.Storable.Generic.Instances where
+module Foreign.Storable.Generic.Instances () where
 
 import Data.Int
 import Data.Word
@@ -11,6 +11,7 @@ import Foreign.Storable.Generic.Internal
 import GHC.Fingerprint.Type
 import System.Posix.Types
 import Data.Ratio (Ratio)
+
 #define MakeGStorable(Type)     \
 instance GStorable Type where   \
     gsizeOf      = sizeOf       \
