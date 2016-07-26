@@ -6,6 +6,8 @@
 {-#LANGUAGE ScopedTypeVariables #-}
 {-#LANGUAGE UndecidableInstances #-}
 
+{-#LANGUAGE TemplateHaskell #-}
+
 module Foreign.Storable.Generic.Internal (
      GStorable'(..),
      GStorable (..),
@@ -119,7 +121,7 @@ instance (GStorable a) => GStorable' (K1 i a) where
 -- | Calculates the size of generic data-type.
 internalSizeOf :: forall f p. (GStorable' f)
                => f p  -- ^ Generic representation 
-               -> Int  -- ^ Resulting size
+               -> Size  -- ^ Resulting size
 internalSizeOf _  = calcSize $ zip sizes aligns
     where sizes  = glistSizeOf'    (undefined :: f p)
           aligns = glistAlignment' (undefined :: f p)
@@ -128,7 +130,7 @@ internalSizeOf _  = calcSize $ zip sizes aligns
 internalAlignment :: forall f p. (GStorable' f) 
                   => f p       -- ^ Generic representation
                   -> Alignment -- ^ Resulting alignment
-internalAlignment  _  = calcAlignment aligns
+internalAlignment  _  = calcAlignment $ aligns
     where aligns = glistAlignment' (undefined :: f p)
 
 -- | View the variable under a pointer, with offset.
@@ -167,14 +169,14 @@ class GStorable a where
             -> Int -- ^ Size.
     default gsizeOf :: (Generic a, GStorable' (Rep a))
                     => a -> Int
-    gsizeOf _ = internalSizeOf (undefined :: Rep a p) 
+    gsizeOf v = internalSizeOf $ from v -- (undefined :: Rep a p) 
     
     -- | Calculate the alignment of the type.
     galignment :: a   -- ^ Element of a given type. Can be undefined  
                -> Int -- ^ Alignment.
     default galignment :: (Generic a, GStorable' (Rep a))
                          => a -> Int
-    galignment _ = internalAlignment (undefined :: Rep a p) 
+    galignment v = internalAlignment $ from v --(undefined :: Rep a p) 
 
     -- | Read the variable from a given pointer.
     gpeekByteOff :: Ptr b -- ^ Pointer to the variable

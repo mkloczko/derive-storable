@@ -35,8 +35,6 @@ type Size      = Int
 type Alignment = Int
 type Offset    = Int
 
-
-
 -- | Get the memory layout of a given type/struct. Used mostly as debug information.
 getFilling :: [(Size,Alignment)] -- ^ List of sizes and aligments of the type's/struct's fields. [(Int,Int)]
            -> [Filling]          -- ^ List representing the memory layout. [Filling]
@@ -62,7 +60,6 @@ calcOffsets []         = []
 calcOffsets size_align = reverse $ fst $ calcOffsets' size_align 0 []
 
 
-
 calcOffsets' :: [(Size, Alignment)] -- ^ List of struct's fields' sizes and alignments
              -> Int                 -- ^ The intermediate variable between the current and previous iteration.
              -> [Offset]            -- ^ Accumulator
@@ -85,9 +82,9 @@ calcAlignment :: [Alignment] -- ^ List of struct's fields' alignments.
               -> Alignment   -- ^ The resulting alignment.
 calcAlignment aligns = calcAlignment' aligns 1
 
-
 calcAlignment' :: [Alignment] -- ^ List of alignments
                -> Alignment   -- ^ Accumulator
                -> Alignment   -- ^ The resulting alignment.
 calcAlignment' []          glob = glob
 calcAlignment' (al:aligns) glob = calcAlignment' aligns (max glob al)
+
