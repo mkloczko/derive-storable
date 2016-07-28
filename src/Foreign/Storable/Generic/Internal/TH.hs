@@ -6,7 +6,7 @@ module Foreign.Storable.Generic.Internal.TH where
 
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
-import Foreign.Storable.Generic.Internal (GStorable'(..), GStorable(..), internalSizeOf, internalAlignment)
+import Foreign.Storable.Generic.Internal (GStorable'(..), GStorable(..), internalSizeOf, internalAlignment, internalOffsets)
 import Foreign.Storable.Generic.Instances
 import Foreign.Storable.Generic.Tools
 import qualified Foreign.Storable.Generic.Internal.TH.Internal as TH
@@ -20,6 +20,27 @@ import System.IO.Unsafe
 data Aaa = Aaaa Int Int deriving (Show, Generic )
 
 
+generateCase :: Int -> [a] -> Q Exp
+generateCase n ls = do
+    -- First, the lambda:
+    -- ... (a:b:c:rest) ix = ...
+    abcs <- replicateM n $ newName "a"
+    let pattern_match = generateListPatternMatch abcs
+    -- And the body:
+    -- case ix of
+    --   0 -> a
+    --   1 -> b
+    --   ...
+    let matches  = zipWith (\ix name -> Match (LitP (IntegerL ix)) (NormalB $ VarE name) []) [0,1..] abcs
+        caseExpr = CaseE (VarE $ mkName "ix") matches
+    lamE [pattern_match, varP $ mkName "ix"] (return caseExpr)
+
+generateListPatternMatch :: [Name] -> Q Pat 
+generateListPatternMatch names = do
+    let head_name = mkName ":"
+        infixHead pat1 patr = infixP pat1 head_name patr
+        patterns =  (map varP names) ++ [wildP]
+    foldr1 infixHead patterns
 
 deriveGStorable t (theT :: a) = do
     -- Check whether a type is generic:
@@ -47,10 +68,16 @@ deriveGStorable t (theT :: a) = do
             let galignment_RHS = lift $ internalAlignment undef 
             clause [wildP] (normalB galignment_RHS) []
         gpeekClause _ = do
-            let gpeek_RHS = [| to <$> $(TH.internalPeekByteOff undef) ptr offset |]
+            let gpeek_RHS = [| to <$> gpeekByteOff' $(fun) offsets (no_fields-1) ptr offset |]
+                offsets   = internalOffsets undef
+                no_fields = gnumberOf' undef
+                fun       = generateCase no_fields offsets
             clause [varP $ mkName "ptr", varP $ mkName "offset"] (normalB gpeek_RHS) []
         gpokeClause _ = do
-            let gpeek_RHS = [| $(TH.internalPokeByteOff undef) ptr offset (from val)|]
+            let gpeek_RHS = [| gpokeByteOff' $(fun) $(lift $ offsets) (no_fields-1) ptr offset (from val)|]
+                offsets   = internalOffsets undef
+                no_fields = gnumberOf' undef
+                fun       = generateCase no_fields offsets            
             clause [varP $ mkName "ptr", varP $ mkName "offset", varP $ mkName "val"] (normalB gpeek_RHS) []    
 
     gsizeOfBody    <- gsizeOfClause cons

@@ -35,14 +35,16 @@ import Foreign.Storable.Generic.Tools
 class GStorable' f where
     -- | Read the element at a given offset. Additional information about the offests 
     -- of the subfields are needed.
-    gpeekByteOff' :: [Int]    -- ^ List of fields' offsets for the type/struct. 
+    gpeekByteOff' :: ([Offset] -> Int -> Offset)
+                  -> [Offset]    -- ^ List of fields' offsets for the type/struct. 
                   -> Int      -- ^ The index. Used to obtain the correct offset
                   -> Ptr b    -- ^ The pointer to the type/struct.
                   -> Int      -- ^ Global offset.
                   -> IO (f a) -- ^ The result, wrapped in GHC.Generic metadata.
     -- | Write the element at a given offset. Additional information about the offests 
     -- of the subfields are needed.
-    gpokeByteOff' :: [Int]  -- ^ List of fields' offsets for the type/struct.
+    gpokeByteOff' :: ([Offset] -> Int -> Offset)
+                  -> [Offset]  -- ^ List of fields' offsets for the type/struct.
                   -> Int    -- ^ The index. Used to obtain the correct offset.
                   -> Ptr b  -- ^ The pointer to the type/struct.
                   -> Int    -- ^ Global offset.
@@ -64,9 +66,9 @@ class GStorable' f where
 
 instance (GStorable' f) => GStorable' (M1 i t f) where
     -- Wrap the peeked value in metadata.
-    gpeekByteOff' offsets ix ptr offset = M1 <$> gpeekByteOff' offsets ix ptr offset
+    gpeekByteOff' fun offsets ix ptr offset = M1 <$> gpeekByteOff' fun offsets ix ptr offset
     -- Discard the metadata and go further.
-    gpokeByteOff' offsets ix ptr offset (M1 x) = gpokeByteOff' offsets ix ptr offset x 
+    gpokeByteOff' fun offsets ix ptr offset (M1 x) = gpokeByteOff' fun offsets ix ptr offset x 
     
 
     gnumberOf' (M1 v) = gnumberOf' v
@@ -79,15 +81,15 @@ instance (GStorable' f) => GStorable' (M1 i t f) where
 
 instance (GStorable' f, GStorable' g) => GStorable' (f :*: g) where
     -- Tree-like traversal for reading the type.
-    gpeekByteOff' offsets ix ptr offset = (:*:) <$> peeker new_ix <*>  peeker ix
+    gpeekByteOff' fun offsets ix ptr offset = (:*:) <$> peeker new_ix <*>  peeker ix
         where new_ix =  ix - n2                                        -- The new index for the left part of the tree.
               n2 = gnumberOf' (undefined :: g a)                       -- Number of elements for the right part of the tree
-              peeker n_ix = gpeekByteOff' offsets n_ix ptr offset      -- gpeekByteOff' wrapped to peek into subtrees.
+              peeker n_ix = gpeekByteOff' fun offsets n_ix ptr offset      -- gpeekByteOff' wrapped to peek into subtrees.
     -- Tree like traversal for writing the type.
-    gpokeByteOff' offsets ix ptr offset (x :*: y) = peeker new_ix x >> peeker ix y
+    gpokeByteOff' fun offsets ix ptr offset (x :*: y) = peeker new_ix x >> peeker ix y
         where new_ix = ix - n2                                 
               n2 = gnumberOf' (undefined :: g a)               -- Number of elements for the right part of the tree.
-              peeker n_ix z = gpokeByteOff' offsets n_ix ptr offset z  -- gpokeByteOff' wrapped to peek into the subtree
+              peeker n_ix z = gpokeByteOff' fun offsets n_ix ptr offset z  -- gpokeByteOff' wrapped to peek into the subtree
 
 
 
@@ -99,10 +101,10 @@ instance (GStorable' f, GStorable' g) => GStorable' (f :*: g) where
     glistAlignment' _ = glistAlignment' (undefined :: f a) ++ glistAlignment' (undefined :: g a)
 
 instance (GStorable a) => GStorable' (K1 i a) where
-    gpeekByteOff' offsets ix ptr offset = K1 <$> gpeekByteOff ptr (off1 + offset)
-        where off1 = offsets !! ix 
-    gpokeByteOff' offsets ix ptr offset (K1 x) = gpokeByteOff ptr (off1 + offset) x
-        where off1 = offsets !! ix 
+    gpeekByteOff' fun offsets ix ptr offset = K1 <$> gpeekByteOff ptr (off1 + offset)
+        where off1 = fun offsets ix 
+    gpokeByteOff' fun offsets ix ptr offset (K1 x) = gpokeByteOff ptr (off1 + offset) x
+        where off1 = fun offsets ix 
 
 
     -- When we use the contructor, just return one.
@@ -135,20 +137,22 @@ internalAlignment  _  = calcAlignment $ aligns
 
 -- | View the variable under a pointer, with offset.
 internalPeekByteOff :: forall f p b. (GStorable' f) 
-                    => Ptr b    -- ^ Pointer to peek 
+                    => ([Offset] -> Int -> Int)
+                    -> Ptr b    -- ^ Pointer to peek 
                     -> Offset   -- ^ Offset 
                     -> IO (f p) -- ^ Resulting generic representation
-internalPeekByteOff ptr off  = gpeekByteOff' offsets ix ptr off
+internalPeekByteOff fun ptr off  = gpeekByteOff' fun offsets ix ptr off
     where offsets = internalOffsets (undefined :: f p)
           ix      = gnumberOf' (undefined :: f p) - 1
 
 -- | Write the variable under the pointer, with offset.
 internalPokeByteOff :: forall f p b. (GStorable' f) 
-                    => Ptr b  -- ^ Pointer to write to
+                    => ([Offset] -> Int -> Int)
+                    -> Ptr b  -- ^ Pointer to write to
                     -> Offset -- ^ Offset 
                     -> f p    -- ^ Written generic representation 
                     -> IO () 
-internalPokeByteOff ptr off rep = gpokeByteOff' offsets ix ptr off rep
+internalPokeByteOff fun ptr off rep = gpokeByteOff' fun offsets ix ptr off rep
     where offsets = internalOffsets (undefined :: f p)
           ix      = gnumberOf' (undefined :: f p) - 1
 
@@ -184,7 +188,7 @@ class GStorable a where
                  -> IO a  -- ^ Returned variable.
     default gpeekByteOff :: (Generic a, GStorable' (Rep a))
                          => Ptr b -> Int -> IO a
-    gpeekByteOff ptr offset = to <$> internalPeekByteOff ptr offset
+    gpeekByteOff ptr offset = to <$> internalPeekByteOff (!!) ptr offset
 
 -- | Write the variable to a pointer. 
     gpokeByteOff :: Ptr b -- ^ Pointer to the variable. 
@@ -193,6 +197,6 @@ class GStorable a where
                  -> IO ()
     default gpokeByteOff :: (Generic a, GStorable' (Rep a))
                          => Ptr b -> Int -> a -> IO ()
-    gpokeByteOff ptr offset x = internalPokeByteOff ptr offset (from x)
+    gpokeByteOff ptr offset x = internalPokeByteOff (!!) ptr offset (from x)
 
 
