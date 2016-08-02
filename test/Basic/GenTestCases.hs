@@ -22,9 +22,10 @@ getInfo str = case words str of
 -- name (type, is_prim)
 data HSStruct = HSStruct String [(String, Bool)]
 instance Show HSStruct where
-    show (HSStruct name types) = concat [fst_line, deriv_line]
+    show (HSStruct name types) = concat [fst_line, deriv_line, th_line]
         where fst_line   = concat ["data ",name , " = ", name," ", concat $ intersperse " " fields,"\n"]
-              deriv_line = concat ["    deriving (Show, Eq, Generic, GStorable)\n\n"]
+              deriv_line = concat ["    deriving (Show, Eq, Generic)\n\n"]
+              th_line    = concat ["$(deriveGStorable @",name ," ''", name,")\n\n"]
               fields     = map fst types
 
 infoToHSStruct :: Info -> HSStruct
@@ -73,7 +74,8 @@ genFFI (HSStruct name types) = concat [new_line, fields_line, offsets_line, size
 headerHS = ["{-# LANGUAGE ForeignFunctionInterface #-}"
            ,"{-# LANGUAGE CApiFFI #-}" 
            ,"{-# LANGUAGE DeriveGeneric #-}"
-           ,"{-# LANGUAGE DeriveAnyClass #-}"
+           ,"{-# LANGUAGE TemplateHaskell #-}"
+           ,"{-# LANGUAGE TypeApplications #-}"
            ,"{-# LANGUAGE FlexibleContexts #-}"
            ,"{-# LANGUAGE ScopedTypeVariables #-}"
            ,""
@@ -82,7 +84,7 @@ headerHS = ["{-# LANGUAGE ForeignFunctionInterface #-}"
            ,"import GHC.Generics (Generic, Rep, from)"
            ,"import Foreign.C.Types"
            ,"import Foreign.Storable"
-           ,"import Foreign.Storable.Generic"
+           ,"import Foreign.Storable.TH"
            ,"import Foreign.Ptr (Ptr)"
            ,"import Foreign.ForeignPtr (ForeignPtr, mallocForeignPtr)"
            ,"import Foreign.Marshal.Alloc (malloc, free)"

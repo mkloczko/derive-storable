@@ -171,6 +171,7 @@ class GStorable a where
     -- | Calculate the size of the type.
     gsizeOf :: a   -- ^ Element of a given type. Can be undefined.
             -> Int -- ^ Size.
+    {-# INLINABLE gsizeOf #-}
     default gsizeOf :: (Generic a, GStorable' (Rep a))
                     => a -> Int
     gsizeOf v = internalSizeOf $ from v -- (undefined :: Rep a p) 
@@ -178,6 +179,7 @@ class GStorable a where
     -- | Calculate the alignment of the type.
     galignment :: a   -- ^ Element of a given type. Can be undefined  
                -> Int -- ^ Alignment.
+    {-# INLINABLE galignment #-}
     default galignment :: (Generic a, GStorable' (Rep a))
                          => a -> Int
     galignment v = internalAlignment $ from v --(undefined :: Rep a p) 
@@ -186,6 +188,7 @@ class GStorable a where
     gpeekByteOff :: Ptr b -- ^ Pointer to the variable
                  -> Int   -- ^ Offset
                  -> IO a  -- ^ Returned variable.
+    {-# INLINABLE gpeekByteOff #-}
     default gpeekByteOff :: (Generic a, GStorable' (Rep a))
                          => Ptr b -> Int -> IO a
     gpeekByteOff ptr offset = to <$> internalPeekByteOff (!!) ptr offset
@@ -195,6 +198,7 @@ class GStorable a where
                  -> Int   -- ^ Offset.
                  -> a     -- ^ The variable
                  -> IO ()
+    {-# INLINABLE gpokeByteOff #-}
     default gpokeByteOff :: (Generic a, GStorable' (Rep a))
                          => Ptr b -> Int -> a -> IO ()
     gpokeByteOff ptr offset x = internalPokeByteOff (!!) ptr offset (from x)
