@@ -55,6 +55,7 @@ getFilling' :: [(Offset, Size)] -- ^ List of struct's fields' offsets and sizes
 getFilling' []           _ _ acc = acc
 getFilling' ((o2,s2):rest) s1 o1 acc = getFilling' rest s2 o2 (Size s2 : Padding ((o2-o1) - s1) : acc )
 
+{-# NOINLINE calcOffsets #-}
 -- | Calculates the memory offset of type's/struct's fields.
 calcOffsets :: [(Size, Alignment)]  -- ^ List of sizes and aligments of the type's/struct's fields. [(Int,Int)]
             -> [Offset]             -- ^ List representing the offests of the type's/struct's fields. [Int]
@@ -63,6 +64,7 @@ calcOffsets size_align = reverse $ fst $ calcOffsets' size_align 0 []
 
 
 
+{-# NOINLINE calcOffsets' #-}
 calcOffsets' :: [(Size, Alignment)] -- ^ List of struct's fields' sizes and alignments
              -> Int                 -- ^ The intermediate variable between the current and previous iteration.
              -> [Offset]            -- ^ Accumulator
@@ -73,6 +75,7 @@ calcOffsets' ((s,a):rest) inter acc = calcOffsets' rest (last_off + s) (last_off
           last_off = inter + p    :: Offset
 
 
+{-# NOINLINE calcSize #-}
 -- | Calculates the size of the type/struct.
 calcSize :: [(Size, Alignment)] -- ^ List of sizes and aligments of the type's/struct's fields. [(Int,Int)].
          -> Size                -- ^ The returned size. Int
@@ -80,6 +83,7 @@ calcSize size_align = inter + ((glob_align - inter) `mod` glob_align)
     where glob_align = calcAlignment $ map snd size_align
           inter      = snd $ calcOffsets' size_align 0 []
 
+{-# NOINLINE calcAlignment #-}
 -- | Calculate the alignment of a struct.
 calcAlignment :: [Alignment] -- ^ List of struct's fields' alignments.
               -> Alignment   -- ^ The resulting alignment.

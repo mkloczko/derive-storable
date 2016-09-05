@@ -116,6 +116,7 @@ instance (GStorable a) => GStorable' (K1 i a) where
 -- These functions were moved outside GStorable type class.
 -- They take generic representations as input.
 
+{-# INLINE internalSizeOf #-}
 -- | Calculates the size of generic data-type.
 internalSizeOf :: forall f p. (GStorable' f)
                => f p  -- ^ Generic representation 
@@ -124,6 +125,7 @@ internalSizeOf _  = calcSize $ zip sizes aligns
     where sizes  = glistSizeOf'    (undefined :: f p)
           aligns = glistAlignment' (undefined :: f p)
 
+{-# INLINE internalAlignment #-}
 -- | Calculates the alignment of generic data-type.
 internalAlignment :: forall f p. (GStorable' f) 
                   => f p       -- ^ Generic representation
@@ -131,6 +133,7 @@ internalAlignment :: forall f p. (GStorable' f)
 internalAlignment  _  = calcAlignment aligns
     where aligns = glistAlignment' (undefined :: f p)
 
+{-# INLINE internalPeekByteOff #-}
 -- | View the variable under a pointer, with offset.
 internalPeekByteOff :: forall f p b. (GStorable' f) 
                     => Ptr b    -- ^ Pointer to peek 
@@ -140,6 +143,7 @@ internalPeekByteOff ptr off  = gpeekByteOff' offsets ix ptr off
     where offsets = internalOffsets (undefined :: f p)
           ix      = gnumberOf' (undefined :: f p) - 1
 
+{-# INLINE internalPokeByteOff #-}
 -- | Write the variable under the pointer, with offset.
 internalPokeByteOff :: forall f p b. (GStorable' f) 
                     => Ptr b  -- ^ Pointer to write to
@@ -150,6 +154,7 @@ internalPokeByteOff ptr off rep = gpokeByteOff' offsets ix ptr off rep
     where offsets = internalOffsets (undefined :: f p)
           ix      = gnumberOf' (undefined :: f p) - 1
 
+{-# INLINE internalOffsets #-}
 -- | Obtain the list of offsets
 internalOffsets :: forall f p. (GStorable' f)
                 => f p      -- Generic representation
