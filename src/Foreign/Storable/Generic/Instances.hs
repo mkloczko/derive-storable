@@ -14,9 +14,13 @@ import Data.Ratio (Ratio)
 
 #define MakeGStorable(Type)     \
 instance GStorable Type where   \
-    gsizeOf      = sizeOf       \
+    {-#INLINE gsizeOf #-}       \
+;   gsizeOf      = sizeOf       \
+;   {-#INLINE galignment #-}    \
 ;   galignment   = alignment    \
+;   {-#INLINE gpeekByteOff #-}  \
 ;   gpeekByteOff = peekByteOff  \
+;   {-#INLINE gpokeByteOff #-}  \
 ;   gpokeByteOff = pokeByteOff  \
 
 -- Haskell primitives

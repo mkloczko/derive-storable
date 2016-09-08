@@ -1,10 +1,12 @@
 # Introduction
 
-The `generic-storable` package allows you to automatically generate Storable instances for your datatypes. It uses `generic-deriving`, which allows the coders to derive certain instances at compile time (unless the code is compiled with `-O0` flag). To derive a Storable instance, the data-type has to:
+The `generic-storable` package allows you to automatically generate Storable instances for your datatypes. It uses GHC.Generics, which allows the coders to derive certain instances automatically. To derive a (G)Storable instance, the data-type has to:
 
 * have only one constructor.
-* all fields of the constructor need to be Storable.
-* implement a Generic instance (`derive (Show, Read ,..,Generic)`)
+* all fields of the constructor need to be GStorable.
+* implement a Generic instance (`derive (Generic)`)
+
+In order to achieve the same performance as for hand-written instances, take a look at [generic-storable-plugin](https://www.github.com/mkloczko/generic-storable-plugin).
 
 # Usage
 
@@ -42,6 +44,5 @@ main = do
     putStrLn =<< show <$> peek ptr
 
 ```
-
 
 
