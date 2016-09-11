@@ -1,3 +1,14 @@
+{-|
+Module      : Foreign.Storable.Generic.Instances
+Copyright   : (c) Mateusz Kłoczko, 2016
+License     : MIT
+Maintainer  : mateusz.p.kloczko@gmail.com
+Stability   : experimental
+Portability : portable
+
+
+-}
+
 {-# LANGUAGE CPP #-}
 module Foreign.Storable.Generic.Instances () where
 

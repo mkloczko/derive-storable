@@ -48,7 +48,7 @@ cabal-version:       >=1.10
 
 library
   -- Modules exported by the library.
-  exposed-modules:     Foreign.Storable.Tuple, Foreign.Storable.Generic, Foreign.Storable.Generic.Tools
+  exposed-modules:     Foreign.Storable.Generic, Foreign.Storable.Generic.Tools
                      , Foreign.Storable.Generic.Internal, Foreign.Storable.Generic.Instances       
   
   -- LANGUAGE extensions used by modules in this package.

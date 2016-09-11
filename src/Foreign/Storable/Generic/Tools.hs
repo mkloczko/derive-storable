@@ -1,8 +1,17 @@
-{-#LANGUAGE DeriveGeneric#-}
+{-|
+Module      : Foreign.Storable.Generic.Tools
+Copyright   : (c) Mateusz Kłoczko, 2016
+License     : MIT
+Maintainer  : mateusz.p.kloczko@gmail.com
+Stability   : experimental
+Portability : portable
+
+
+-}
+
+
 {-#LANGUAGE FlexibleInstances #-}
 {-#LANGUAGE FlexibleContexts #-}
-{-#LANGUAGE DefaultSignatures #-}
-{-#LANGUAGE DeriveGeneric #-}
 {-#LANGUAGE TypeOperators #-}
 {-#LANGUAGE ScopedTypeVariables #-}
 {-#LANGUAGE UndecidableInstances #-}
