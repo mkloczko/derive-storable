@@ -1,6 +1,7 @@
 {-#LANGUAGE ScopedTypeVariables #-}
 {-#LANGUAGE DeriveGeneric       #-}
 {-#LANGUAGE DataKinds           #-}
+{-#LANGUAGE GADTs               #-}
 module Foreign.Storable.Generic.Internal.GStorable'Spec where
 
 
@@ -135,19 +136,6 @@ spec = do
 
                 v1 `shouldBe` (v2_a :*: v2_b)
                 )
-        it "crashes when ix /= number of fields" $ do 
-            property (\(GenericType (val1 :: f p)) -> do
-                let offsets   = internalOffsets val1
-                    no_fields = gnumberOf' val1 
-                -- The bad index    
-                bad_ix <- generate $ suchThat arbitrary (/=no_fields)
-                -- Poked area
-                ptr <- mallocBytes $ internalSizeOf val1
-                -- The test
-                (gpeekByteOff' offsets bad_ix ptr 0 :: IO (f p)) `shouldThrow` anyException
-                -- Freeing the pointer
-                free ptr
-                )
     describe "gpokeByteOff' " $ do
         it "instance M1    is equal to: gpokeByteOff' offs ix ptr off val" $ do
             property (\(GenericType (val :: f p)) -> do
@@ -227,17 +215,4 @@ spec = do
                 free ptr
                 -- Check:
                 bytes1 `shouldBe` bytes2
-                )
-        it "crashes when ix /= number of fields" $ do 
-            property (\(GenericType (val1 :: f p)) -> do
-                let offsets   = internalOffsets val1
-                    no_fields = gnumberOf' val1 
-                -- The bad index    
-                bad_ix <- generate $ suchThat arbitrary (/=no_fields)
-                -- Poked area
-                ptr <- mallocBytes $ internalSizeOf val1
-                -- The test
-                gpokeByteOff' offsets bad_ix ptr 0 val1 `shouldThrow` anyException
-                -- Freeing the pointer
-                free ptr
                 )
