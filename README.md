@@ -1,5 +1,7 @@
 # Introduction
 
+[![Build Status](https://travis-ci.org/mkloczko/derive-storable.svg?branch=master)](https://travis-ci.org/mkloczko/derive-storable)
+
 The `derive-storable` package allows you to automatically generate Storable instances for your datatypes. It uses GHC.Generics, which allows the coders to derive certain instances automatically. To derive a (G)Storable instance, the data-type has to:
 
 * have only one constructor.
