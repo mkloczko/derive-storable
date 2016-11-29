@@ -68,16 +68,18 @@ before_install:
 # Using compiler above sets CC to an invalid value, so unset it
 - unset CC
 # We want to always allow newer versions of packages when building on GHC HEAD
-- CABALARGS=""
+- CABALARGS=" --ghc-options=-I$HOME/.gcc/include "
 - if [ "x$GHCVER" = "xhead" ]; then CABALARGS=--allow-newer; fi
 # Set paths
 - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:/opt/alex/$ALEXVER/bin:/opt/happy/$HAPPYVER/bin:$HOME/.cabal/bin:$HOME/.gcc/bin:$PATH
 # Set the GCC...
 - mkdir -p ~/.gcc/bin;
   ln -s /usr/bin/gcc-6 $HOME/.gcc/bin/gcc 
+- mkdir -p ~/.gcc/include;
+  ln -s /usr/lib/gcc/x86-linux-gnu/6/include/* $HOME/.gcc/include
+
 - echo `gcc --version`
 - echo `whereis gcc`
-- dpkg -L gcc-6
 - echo `find /usr/ -type f -name stdalign.h`
 - export C_INCLUDE_PATH=$/usr/lib/x86_64-linux-gnu/$GCCVER/include:$C_INCLUDE_PATH
 # Download and unpack the stack executable
