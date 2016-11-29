@@ -73,8 +73,11 @@ before_install:
 # Set paths
 - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:/opt/alex/$ALEXVER/bin:/opt/happy/$HAPPYVER/bin:$HOME/.cabal/bin:$HOME/.gcc/bin:$PATH
 # Set the GCC...
-- mkdir -p ~/.gcc/bin;
-  ln -s /usr/bin/gcc-6 $HOME/.gcc/bin/gcc 
+
+- if [ $BUILD == "cabal"]; then
+    mkdir -p ~/.gcc/bin;
+    ln -s /usr/bin/gcc-6 $HOME/.gcc/bin/gcc; 
+  fi
 - echo `gcc --version`
 - echo `whereis gcc`
 - echo `find /usr/ -type f -name stdalign.h`
@@ -100,11 +103,11 @@ before_install:
   fi
 
 install:  
-- mkdir -p ~/.gcc/include;
-  ln -s /usr/lib/gcc/x86_64-linux-gnu/6/include/ $HOME/.gcc/include/
-- ls -l $HOME/.gcc/include
+- if [ $BUILD == "cabal"]; then
+    mkdir -p ~/.gcc/include;
+    ln -s /usr/lib/gcc/x86_64-linux-gnu/6/include/ $HOME/.gcc/include/;
+  fi
 - find /usr/ -type f -name stdalign.h
-- ls -l /usr/lib/gcc/x86_64-linux-gnu/6/include/
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - if [ -f configure.ac ]; then autoreconf -i; fi
 - |
