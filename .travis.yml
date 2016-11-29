@@ -50,15 +50,15 @@ matrix:
 #
   - env: BUILD=stack ARGS="--resolver lts-6"
     compiler: ": #stack 7.10.3 osx"
-#    os: osx
+    os: osx
 #
-#  - env: BUILD=stack ARGS="--resolver lts-7"
-#    compiler: ": #stack 8.0.1 osx"
-#    os: osx
+  - env: BUILD=stack ARGS="--resolver lts-7"
+    compiler: ": #stack 8.0.1 osx"
+    os: osx
 #
-#  - env: BUILD=stack ARGS="--resolver nightly"
-#    compiler: ": #stack nightly osx"
-#    os: osx
+  - env: BUILD=stack ARGS="--resolver nightly"
+    compiler: ": #stack nightly osx"
+    os: osx
 #
 #  allow_failures:
 #  - env: BUILD=cabal GHCVER=head  CABALVER=head HAPPYVER=1.19.5 ALEXVER=3.1.7 GCCVER=6
