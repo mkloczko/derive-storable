@@ -1,6 +1,7 @@
 {-#LANGUAGE ScopedTypeVariables #-}
 {-#LANGUAGE DeriveGeneric       #-}
 {-#LANGUAGE DataKinds           #-}
+{-#LANGUAGE GADTs               #-}
 module Foreign.Storable.Generic.InternalSpec where
 
 
