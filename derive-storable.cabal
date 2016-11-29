@@ -1,7 +1,7 @@
 name:                derive-storable
 
 version:             0.1.0.3
-synopsis: Derive Storable instances with help of GHC.Generics.           
+synopsis:            Derive Storable instances with help of GHC.Generics.           
 
 description:         The package allows for automatic derivation of Storable instances 
                      with C-like memory layout.
