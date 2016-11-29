@@ -92,11 +92,12 @@ before_install:
     echo 'jobs: $ncpus' >> $HOME/.cabal/config
   fi
 
-install:
+install:  
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - echo `gcc --version`
 - echo `whereis gcc`
 - echo `find /opt/ -type f -name gcc`
+- echo `find /     -type f -name gcc`
 - echo `find /usr/ -type f -name stdalign.h`
 - if [ -f configure.ac ]; then autoreconf -i; fi
 - |
