@@ -33,16 +33,16 @@ cache:
 #     addons: {apt: {packages: [libfcgi-dev,libgmp-dev]}}
 matrix:
   include:
-  - env: BUILD=cabal GHCVER=7.10.3 CABALVER=1.22 HAPPYVER=1.19.5 ALEXVER=3.1.7 GCCVER=6.2.0
+  - env: BUILD=cabal GHCVER=7.10.3 CABALVER=1.22 HAPPYVER=1.19.5 ALEXVER=3.1.7 GCCVER=6
     compiler: ": #GHC 7.10.3"
     addons: {apt: {packages: [cabal-install-1.22,ghc-7.10.3,happy-1.19.5,alex-3.1.7,gcc-6], sources: [hvr-ghc,ubuntu-toolchain-r-test ]}}
-  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 HAPPYVER=1.19.5 ALEXVER=3.1.7 GCCVER=6.2.0
+  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 HAPPYVER=1.19.5 ALEXVER=3.1.7 GCCVER=6
     compiler: ": #GHC 8.0.1"
     addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1,happy-1.19.5,alex-3.1.7,gcc-6], sources: [hvr-ghc,ubuntu-toolchain-r-test]}}
 
   # Build with the newest GHC and cabal-install. This is an accepted failure,
   # see below.
-  - env: BUILD=cabal GHCVER=head  CABALVER=head HAPPYVER=1.19.5 ALEXVER=3.1.7
+  - env: BUILD=cabal GHCVER=head  CABALVER=head HAPPYVER=1.19.5 ALEXVER=3.1.7 GCCVER=6
     compiler: ": #GHC HEAD"
     addons: {apt: {packages: [cabal-install-head,ghc-head,happy-1.19.5,alex-3.1.7,gcc-6], sources: [hvr-ghc,ubuntu-toolchain-r-test]}}
 
@@ -99,6 +99,7 @@ install:
 - echo `find /opt/ -type f -name gcc`
 - echo `find /     -type f -name gcc`
 - echo `find /usr/ -type f -name stdalign.h`
+- export C_INCLUDE_PATH=$/usr/lib/x86_64-linux-gnu/$GCCVER/include:$C_INCLUDE_PATH
 - if [ -f configure.ac ]; then autoreconf -i; fi
 - |
   set -ex
