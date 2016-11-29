@@ -1,5 +1,10 @@
 # Revision history for derive-storable
 
+## 0.1.0.4  -- 2016-11-29
+
+* Fixed the bug with Foreign.Storable.Generic.Internal.Instances module.
+* Removed out of bounds tests for GStorable' typeclass.
+
 ## 0.1.0.3  -- 2016-09-19
 
 * Changed the link in README to hackage repository.

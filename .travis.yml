@@ -95,8 +95,8 @@ before_install:
 install:
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - echo `gcc --version`
-- echo `wheris gcc`
-- echo `find /usr/ -type f -name gcc`
+- echo `whereis gcc`
+- echo `find /opt/ -type f -name gcc`
 - echo `find /usr/ -type f -name stdalign.h`
 - if [ -f configure.ac ]; then autoreconf -i; fi
 - |
