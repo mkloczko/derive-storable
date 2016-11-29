@@ -68,7 +68,7 @@ before_install:
 # Using compiler above sets CC to an invalid value, so unset it
 - unset CC
 # We want to always allow newer versions of packages when building on GHC HEAD
-- CABALARGS=" --ghc-options=-I$HOME/.gcc/include "
+- CABALARGS=" --ghc-options=-I/usr/lib/gcc/x86_64-linux-gnu/6/include/"
 - if [ "x$GHCVER" = "xhead" ]; then CABALARGS=--allow-newer; fi
 # Set paths
 - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:/opt/alex/$ALEXVER/bin:/opt/happy/$HAPPYVER/bin:$HOME/.cabal/bin:$HOME/.gcc/bin:$PATH
