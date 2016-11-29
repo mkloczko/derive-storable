@@ -94,6 +94,8 @@ before_install:
 install:  
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - alias gcc='/usr/bin/gcc-6'
+- echo $COMPILER
+- echo $CC
 - echo `gcc --version`
 - echo `whereis gcc`
 - dpkg -L gcc-6
