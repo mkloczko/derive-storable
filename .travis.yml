@@ -96,8 +96,7 @@ install:
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - echo `gcc --version`
 - echo `whereis gcc`
-- echo `find /opt/ -type f -name gcc`
-- echo `find /     -type f -name gcc`
+- dpkg -L gcc-6
 - echo `find /usr/ -type f -name stdalign.h`
 - export C_INCLUDE_PATH=$/usr/lib/x86_64-linux-gnu/$GCCVER/include:$C_INCLUDE_PATH
 - if [ -f configure.ac ]; then autoreconf -i; fi
