@@ -76,8 +76,8 @@ before_install:
 - mkdir -p ~/.gcc/bin;
   ln -s /usr/bin/gcc-6 $HOME/.gcc/bin/gcc 
 - mkdir -p ~/.gcc/include;
-  ln -s /usr/lib/gcc/x86-linux-gnu/6/include/* $HOME/.gcc/include
-
+  ln -s /usr/lib/gcc/x86-linux-gnu/6/include/* $HOME/.gcc/include;
+  ls -l $HOME/.gcc/include
 - echo `gcc --version`
 - echo `whereis gcc`
 - echo `find /usr/ -type f -name stdalign.h`
