@@ -78,9 +78,9 @@ before_install:
     mkdir -p ~/.gcc/bin;
     ln -s /usr/bin/gcc-6 $HOME/.gcc/bin/gcc; 
   fi
-- echo `gcc --version`
-- echo `whereis gcc`
-- echo `find /usr/ -type f -name stdalign.h`
+# - echo `gcc --version`
+# - echo `whereis gcc`
+# - echo `find /usr/ -type f -name stdalign.h`
 - export C_INCLUDE_PATH=$/usr/lib/x86_64-linux-gnu/$GCCVER/include:$C_INCLUDE_PATH
 # Download and unpack the stack executable
 - mkdir -p ~/.local/bin
@@ -107,7 +107,7 @@ install:
     mkdir -p ~/.gcc/include;
     ln -s /usr/lib/gcc/x86_64-linux-gnu/6/include/ $HOME/.gcc/include/;
   fi
-- find /usr/ -type f -name stdalign.h
+# - find /usr/ -type f -name stdalign.h
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - if [ -f configure.ac ]; then autoreconf -i; fi
 - |
