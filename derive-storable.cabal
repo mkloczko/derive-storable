@@ -1,6 +1,6 @@
 name:                derive-storable
 
-version:             0.1.0.4
+version:             0.1.0.5
 synopsis:            Derive Storable instances with GHC.Generics.           
 
 description:         Derive Storable instances with GHC.Generics. The derived Storable instances have the same alignment as C structs.
@@ -53,10 +53,3 @@ source-repository head
   type:                git
   location:            https://github.com/mkloczko/derive-storable
   branch:              master
-
-
-source-repository this
-  type:                git
-  location:            https://github.com/mkloczko/derive-storable
-  branch:              master
-  tag:                 bb5cc5d3fa34c8346fda84898606ea3c120ea131

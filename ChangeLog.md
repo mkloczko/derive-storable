@@ -1,5 +1,9 @@
 # Revision history for derive-storable
 
+## 0.1.0.5  -- 2016-12-07
+
+* Made the information about performance problems more visible in README.md
+
 ## 0.1.0.4  -- 2016-11-29
 
 * Fixed the bug with Foreign.Storable.Generic.Internal.Instances module.

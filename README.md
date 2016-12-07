@@ -8,7 +8,10 @@ The `derive-storable` package allows you to automatically generate Storable inst
 * all fields of the constructor need to be GStorable.
 * implement a Generic instance (`derive (Generic)`)
 
-In order to achieve the same performance as for hand-written instances, take a look at [derive-storable-plugin](https://hackage.haskell.org/package/derive-storable-plugin).
+
+### Note on performance
+
+There are some problems with performance of derived Storable instances. For now there exists a solution in form of GHC Core plugin - [derive-storable-plugin](https://hackage.haskell.org/package/derive-storable-plugin).
 
 # Usage
 
@@ -46,5 +49,4 @@ main = do
     putStrLn =<< show <$> peek ptr
 
 ```
-
 
