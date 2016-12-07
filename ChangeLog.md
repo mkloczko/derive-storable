@@ -1,6 +1,6 @@
 # Revision history for derive-storable
 
-## 0.1.0.5  -- 2016-12-07
+## 0.1.0.6  -- 2016-12-07
 
 * Made the information about performance problems more visible in README.md
 
