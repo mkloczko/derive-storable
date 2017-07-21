@@ -48,11 +48,11 @@ matrix:
 #    addons: {apt: {packages: [cabal-install-head,ghc-head,happy-1.19.5,alex-3.1.7,gcc-6], sources: [hvr-ghc,ubuntu-toolchain-r-test]}}
 #
 #
-  - env: BUILD=stack ARGS="--resolver lts-6"
+  - env: BUILD=stack ARGS="--resolver lts-6 --solver"
     compiler: ": #stack 7.10.3 osx"
     os: osx
 #
-  - env: BUILD=stack ARGS="--resolver lts-7"
+  - env: BUILD=stack ARGS="--resolver lts-7 --solver"
     compiler: ": #stack 8.0.1 osx"
     os: osx
 #
