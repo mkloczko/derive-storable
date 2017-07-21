@@ -8,7 +8,7 @@ import TestCases
 
 -- Test libraries
 import Test.Hspec
-import Test.QuickCheck
+import Test.QuickCheck hiding (getSize)
 
 -- Helpers
 import Foreign.Marshal.Array

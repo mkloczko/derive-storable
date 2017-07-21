@@ -65,12 +65,8 @@ instance TestType (Ptr a)
 instance TestType Char
 
 instance TestType CFloat
-instance Arbitrary CFloat where
-    arbitrary = realToFrac <$> (arbitrary :: Gen Float) 
 
 instance TestType CDouble
-instance Arbitrary CDouble where
-    arbitrary = realToFrac <$> (arbitrary :: Gen Double)
 
 -- | The wrappable type class. Wraps the type in generics
 -- and then into GenericType data type.

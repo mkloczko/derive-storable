@@ -1,5 +1,9 @@
 # Revision history for derive-storable
 
+## 0.1.1.0  -- 2017-07-19
+
+* Bumped to GHC 8.2.*
+
 ## 0.1.0.6  -- 2016-12-07
 
 * Made the information about performance problems more visible in README.md
