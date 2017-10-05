@@ -87,19 +87,45 @@ MakeGStorable((FunPtr a))
 
 -- Posix
 MakeGStorable(Fd)
+#if defined(HTYPE_RLIM_T)
 MakeGStorable(CRLim)
+#endif
+#if defined(HTYPE_TCFLAG_T)
 MakeGStorable(CTcflag)
+#endif
+#if defined(HTYPE_SPEED_T)
 MakeGStorable(CSpeed)
+#endif
+#if defined(HTYPE_CC_T)
 MakeGStorable(CCc)
+#endif
+#if defined(HTYPE_UID_T)
 MakeGStorable(CUid)
+#endif
+#if defined(HTYPE_NLINK_T)
 MakeGStorable(CNlink)
+#endif
+#if defined(HTYPE_GID_T)
 MakeGStorable(CGid)
+#endif
+#if defined(HTYPE_SSIZE_T)
 MakeGStorable(CSsize)
+#endif
+#if defined(HTYPE_PID_T)
 MakeGStorable(CPid)
+#endif
+#if defined(HTYPE_OFF_T)
 MakeGStorable(COff)
+#endif
+#if defined(HTYPE_MODE_T)
 MakeGStorable(CMode)
+#endif
+#if defined(HTYPE_INO_T)
 MakeGStorable(CIno)
+#endif
+#if defined(HTYPE_DEV_T)
 MakeGStorable(CDev)
+#endif
  
 
 
