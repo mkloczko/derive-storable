@@ -9,7 +9,9 @@ Portability : portable
 
 -}
 
+
 {-# LANGUAGE CPP #-}
+#include "HsBaseConfig.h"
 module Foreign.Storable.Generic.Instances () where
 
 import Data.Int

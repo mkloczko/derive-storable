@@ -1,5 +1,9 @@
 # Revision history for derive-storable
 
+## 0.1.1.1  -- 2017-10-05
+
+* Fixed a bug with POSIX types enabled on non POSIX systems.
+
 ## 0.1.1.0  -- 2017-07-19
 
 * Bumped to GHC 8.2.*
