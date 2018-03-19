@@ -28,7 +28,7 @@ same_fields a = do
     ptr2 <- new a
     checkFields ptr1 ptr2 `shouldReturn` True
 main = hspec $ do
-    describe "Test for same size" $ do
+    describe "Test for the same size" $ do
         it "C1" $ property $ (same_size      :: C1 -> Expectation)
         it "C2" $ property $ (same_size      :: C2 -> Expectation)
         it "C3" $ property $ (same_size      :: C3 -> Expectation)
@@ -49,7 +49,7 @@ main = hspec $ do
         it "C18" $ property $ (same_size      :: C18 -> Expectation)
         it "C19" $ property $ (same_size      :: C19 -> Expectation)
         it "C20" $ property $ (same_size      :: C20 -> Expectation)
-    describe "Test for same alignment" $ do
+    describe "Test for the same alignment" $ do
         it "C1" $ property $ (same_alignment :: C1 -> Expectation)
         it "C2" $ property $ (same_alignment :: C2 -> Expectation)
         it "C3" $ property $ (same_alignment :: C3 -> Expectation)
@@ -70,7 +70,7 @@ main = hspec $ do
         it "C18" $ property $ (same_alignment :: C18 -> Expectation)
         it "C19" $ property $ (same_alignment :: C19 -> Expectation)
         it "C20" $ property $ (same_alignment :: C20 -> Expectation)
-    describe "Test for same offsets" $ do
+    describe "Test for the same offsets" $ do
         it "C1" $ property $ (same_offsets   :: C1 -> Expectation)
         it "C2" $ property $ (same_offsets   :: C2 -> Expectation)
         it "C3" $ property $ (same_offsets   :: C3 -> Expectation)
@@ -91,7 +91,7 @@ main = hspec $ do
         it "C18" $ property $ (same_offsets   :: C18 -> Expectation)
         it "C19" $ property $ (same_offsets   :: C19 -> Expectation)
         it "C20" $ property $ (same_offsets   :: C20 -> Expectation)
-    describe "Test for same fields" $ do
+    describe "Test for the same fields" $ do
         it "C1" $ property $ (same_fields    :: C1 -> Expectation)
         it "C2" $ property $ (same_fields    :: C2 -> Expectation)
         it "C3" $ property $ (same_fields    :: C3 -> Expectation)
