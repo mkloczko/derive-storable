@@ -10,7 +10,10 @@ Portability : portable
 -}
 
 
-{-# LANGUAGE CPP #-}
+{-#LANGUAGE CPP #-}
+{-#LANGUAGE DataKinds #-}
+{-#LANGUAGE TypeFamilies #-}
+#include "MachDeps.h"
 #include "HsBaseConfig.h"
 module Foreign.Storable.Generic.Instances () where
 
@@ -22,8 +25,18 @@ import Foreign.StablePtr
 import Foreign.Storable
 import Foreign.Storable.Generic.Internal
 import GHC.Fingerprint.Type
+import GHC.Storable
+
 import System.Posix.Types
 import Data.Ratio (Ratio)
+
+
+#define Testy(T,val) \
+test_T = val
+
+Testy(Int32, SIZEOF_INT32)
+
+test_val = SIZEOF_INT32
 
 #define MakeGStorable(Type)     \
 instance GStorable Type where   \
@@ -36,9 +49,26 @@ instance GStorable Type where   \
 ;   {-#INLINE gpokeByteOff #-}  \
 ;   gpokeByteOff = pokeByteOff  \
 
+#define MakeGStorableTypeFun(T, size, align, read, write) \
+instance GStorable T where                                \
+;   type GSize T = size                                   \
+;   type GAlignment T = align                             \
+;   gsizeOf    _ = size                                   \
+;   galignment _ = align                                  \
+;   gpeekByteOff ptr off = read  (ptr `plusPtr` off) 0    \
+;   gpokeByteOff ptr off = write (ptr `plusPtr` off) 0    \
+
+MakeGStorableTypeFun(Char,SIZEOF_INT32,ALIGNMENT_INT32, readWideCharOffPtr,writeWideCharOffPtr)
+
+--MakeGStorableTypeFun(Float,SIZEOF_HSFLOAT,ALIGNMENT_HSFLOAT,
+--         readFloatOffPtr,writeFloatOffPtr)
+--
+--MakeGStorableTypeFun(Double,SIZEOF_HSDOUBLE,ALIGNMENT_HSDOUBLE,
+--         readDoubleOffPtr,writeDoubleOffPtr)
+
 -- Haskell primitives
 MakeGStorable(Bool)
-MakeGStorable(Char)
+--MakeGStorable(Char)
 MakeGStorable(Double)
 MakeGStorable(Float)
 

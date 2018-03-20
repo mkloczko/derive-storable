@@ -21,16 +21,18 @@ Portability : portable
 
 {-#LANGUAGE TypeInType #-}
 
-module Foreign.Storable.Generic.Tools (
-    Size,
-    Alignment,
-    Offset,
-    Filling(..),
-    calcOffsets,
-    calcSize,
-    calcAlignment,
-    getFilling
-) where
+module Foreign.Storable.Generic.Tools where  
+-- (
+--     Size,
+--     Alignment,
+--     Offset,
+--     Filling(..),
+--     calcOffsets,
+--     calcSize,
+--     calcAlignment,
+--     getFilling,
+--     Concat
+-- ) where
 
 import Data.List
 import GHC.TypeLits

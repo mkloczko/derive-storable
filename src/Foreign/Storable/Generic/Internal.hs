@@ -15,16 +15,22 @@ Portability : portable
 {-#LANGUAGE TypeOperators #-}
 {-#LANGUAGE ScopedTypeVariables #-}
 {-#LANGUAGE UndecidableInstances #-}
+{-#LANGUAGE RankNTypes#-}
+{-#LANGUAGE DataKinds #-}
+{-#LANGUAGE TypeFamilies #-}
+{-#LANGUAGE PolyKinds #-}
 
-module Foreign.Storable.Generic.Internal (
-     GStorable'(..),
-     GStorable (..),
-     internalSizeOf,
-     internalAlignment,
-     internalPeekByteOff,
-     internalPokeByteOff,
-     internalOffsets
-  ) where
+module Foreign.Storable.Generic.Internal where
+--(
+--     GStorable'(..),
+--     GStorable (..),
+--     internalSizeOf,
+--     internalAlignment,
+--     internalPeekByteOff,
+--     internalPokeByteOff,
+--     internalOffsets,
+--     GetSizes
+--  ) where
 
 import GHC.Generics
 import Foreign.Ptr
@@ -33,11 +39,12 @@ import Foreign.Marshal.Alloc
 import Foreign.C.Types
 
 import Data.Int
+import Data.Proxy
 
 import Debug.Trace
 
 import Foreign.Storable.Generic.Tools
-
+import GHC.TypeLits
 import GHC.Exts
 
 -- Defining the generics ---
@@ -87,17 +94,17 @@ instance (GStorable' f) => GStorable' (M1 i t f) where
 
 instance (GStorable' f, GStorable' g) => GStorable' (f :*: g) where
     -- Tree-like traversal for reading the type.
-    {-# INLINE gpeekByteOff' #-}
-    gpeekByteOff' offsets ix ptr offset = (:*:) <$> peeker new_ix <*>  peeker ix
-        where new_ix =  ix - n2                                        -- The new index for the left part of the tree.
-              n2 = gnumberOf' (undefined :: g a)                       -- Number of elements for the right part of the tree
-              peeker n_ix = gpeekByteOff' offsets n_ix ptr offset      -- gpeekByteOff' wrapped to peek into subtrees.
-    -- Tree like traversal for writing the type.
-    {-# INLINE gpokeByteOff' #-}
-    gpokeByteOff' offsets ix ptr offset (x :*: y) = peeker new_ix x >> peeker ix y
-        where new_ix = ix - n2                                 
-              n2 = gnumberOf' (undefined :: g a)               -- Number of elements for the right part of the tree.
-              peeker n_ix z = gpokeByteOff' offsets n_ix ptr offset z  -- gpokeByteOff' wrapped to peek into the subtree
+    -- {-# INLINE gpeekByteOff' #-}
+    -- gpeekByteOff' offsets ix ptr offset = (:*:) <$> peeker new_ix <*>  peeker ix
+    --     where new_ix =  ix - n2                                        -- The new index for the left part of the tree.
+    --           n2 = gnumberOf' (undefined :: g a)                       -- Number of elements for the right part of the tree
+    --           peeker n_ix = gpeekByteOff' offsets n_ix ptr offset      -- gpeekByteOff' wrapped to peek into subtrees.
+    -- -- Tree like traversal for writing the type.
+    -- {-# INLINE gpokeByteOff' #-}
+    -- gpokeByteOff' offsets ix ptr offset (x :*: y) = peeker new_ix x >> peeker ix y
+    --     where new_ix = ix - n2                                 
+    --           n2 = gnumberOf' (undefined :: g a)               -- Number of elements for the right part of the tree.
+    --           peeker n_ix z = gpokeByteOff' offsets n_ix ptr offset z  -- gpokeByteOff' wrapped to peek into the subtree
 
 
 
@@ -177,10 +184,35 @@ internalOffsets _ = calcOffsets $ zip sizes aligns
     where sizes = glistSizeOf'    (undefined :: f p)
           aligns= glistAlignment' (undefined :: f p)
 
+--Check if URec or not.
+
+
+type family GetSizes (rep :: * -> *) :: [Nat] where
+    GetSizes (M1 _ _ f)  = GetSizes (f)
+    GetSizes ((f :+: k)) = '[0]
+    GetSizes ((f :*: k)) = Concat [GetSizes f, GetSizes k]
+    GetSizes (K1 _ c)    = '[GSize c]
+
+
+type family GetAlignments (rep :: * -> *) :: [Nat] where
+    GetAlignments (M1 _ _ f)  = GetAlignments (f)
+    GetAlignments ((f :+: k)) = '[0]
+    GetAlignments ((f :*: k)) = Concat [GetAlignments f, GetAlignments k]
+    GetAlignments (K1 _ c)    = '[GAlignment c]
+
 -- | The class uses the default Generic based implementations to 
 -- provide Storable instances for types made from primitive types.
 -- Does not work on Algebraic Data Types with more than one constructor.
 class GStorable a where
+    type GSize      a :: Nat
+    type GSize a = CalcSize (Zip (GSizes a) (GAlignments a))
+    type GSizes a :: [Nat]
+    type GSizes a = GetSizes (Rep a)
+    type GAlignments a :: [Nat]
+    type GAlignments a = GetAlignments (Rep a)
+    type GAlignment a :: Nat
+    type GAlignment a = 0
+   
     -- | Calculate the size of the type.
     {-# INLINE gsizeOf #-}
     gsizeOf :: a   -- ^ Element of a given type. Can be undefined.
