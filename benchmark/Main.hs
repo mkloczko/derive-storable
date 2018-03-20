@@ -54,9 +54,9 @@ singularTests =
        , bgroup "GStorable" $
            [ bench "C1" $ nf sizeOf c1_def
            , bench "C2" $ nf sizeOf c2_def
-           , bench "C3" $ nf sizeOf c3_def
-           , bench "C4" $ nf sizeOf c4_def
-           , bench "C5" $ nf sizeOf c5_def
+           --, bench "C3" $ nf sizeOf c3_def
+           --, bench "C4" $ nf sizeOf c4_def
+           --, bench "C5" $ nf sizeOf c5_def
            ]
        ]
    , bgroup "alignment" $ 
@@ -70,9 +70,9 @@ singularTests =
        , bgroup "GStorable" $
            [ bench "C1" $ nf alignment c1_def
            , bench "C2" $ nf alignment c2_def
-           , bench "C3" $ nf alignment c3_def
-           , bench "C4" $ nf alignment c4_def
-           , bench "C5" $ nf alignment c5_def
+           --, bench "C3" $ nf alignment c3_def
+           --, bench "C4" $ nf alignment c4_def
+           --, bench "C5" $ nf alignment c5_def
            ]
        ]
    , bgroup "peek" $
@@ -86,9 +86,9 @@ singularTests =
        , bgroup "GStorable" $
            [ env (malloc @C1  ) $ \ptr -> bench "C1" $ nfIO (peek ptr)
            , env (malloc @C2  ) $ \ptr -> bench "C2" $ nfIO (peek ptr)
-           , env (malloc @C3  ) $ \ptr -> bench "C3" $ nfIO (peek ptr)
-           , env (malloc @C4  ) $ \ptr -> bench "C4" $ nfIO (peek ptr)
-           , env (malloc @C5  ) $ \ptr -> bench "C5" $ nfIO (peek ptr)
+           --, env (malloc @C3  ) $ \ptr -> bench "C3" $ nfIO (peek ptr)
+           --, env (malloc @C4  ) $ \ptr -> bench "C4" $ nfIO (peek ptr)
+           --, env (malloc @C5  ) $ \ptr -> bench "C5" $ nfIO (peek ptr)
            ]
        ] 
   , bgroup "poke" $
@@ -102,9 +102,9 @@ singularTests =
       , bgroup "GStorable" $
           [ env malloc $ \ptr -> bench "C1" $ nfIO (poke ptr c1_def) 
           , env malloc $ \ptr -> bench "C2" $ nfIO (poke ptr c2_def)
-          , env malloc $ \ptr -> bench "C3" $ nfIO (poke ptr c3_def)
-          , env malloc $ \ptr -> bench "C4" $ nfIO (poke ptr c4_def)
-          , env malloc $ \ptr -> bench "C5" $ nfIO (poke ptr c5_def)
+          --, env malloc $ \ptr -> bench "C3" $ nfIO (poke ptr c3_def)
+          --, env malloc $ \ptr -> bench "C4" $ nfIO (poke ptr c4_def)
+          --, env malloc $ \ptr -> bench "C5" $ nfIO (poke ptr c5_def)
           ]
       ]
   ]

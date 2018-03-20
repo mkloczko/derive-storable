@@ -159,7 +159,7 @@ type family CalcOffsets (sals :: [(SizeNat,AlignmentNat)]) :: [OffsetNat] where
 
 type family CalcOffsets' (sals :: [(SizeNat, AlignmentNat)]) (itr :: Nat) (offst :: [OffsetNat]) :: ([OffsetNat],Nat) where
     CalcOffsets' '[]          inter acc = '(acc, inter)
-    CalcOffsets' ('(s,a):rest) inter acc = CalcOffsets' rest (inter + s + (Mod (a-inter) a)) ((inter + (Mod (a-inter) a) ) : acc)
+    CalcOffsets' ('(s,a):rest) inter acc = CalcOffsets' rest (inter + s + (NegativeMod a inter a)) ((inter + (NegativeMod a inter a) ) : acc)
 
 {-# NOINLINE calcOffsets #-}
 -- | Calculates the memory offset of type's/struct's fields.
@@ -188,7 +188,14 @@ type family CalcSize (sals :: [(SizeNat,AlignmentNat)]) :: SizeNat where
     -- Maybe CPP macros would be ok, but they come with their own trade offs
     -- inter = (Snd (CalcOffsets' sizes_aligns 0 '[]))
     -- glob_align = (CalcAlignment (GetSnds sizes_aligns)) 
-    CalcSize sizes_aligns = (Snd (CalcOffsets' sizes_aligns 0 '[])) + (Mod (CalcAlignment ((GetSnds sizes_aligns)) - (Snd (CalcOffsets' sizes_aligns 0 '[]))) (CalcAlignment (GetSnds sizes_aligns) ) )
+    CalcSize sizes_aligns = (Snd (CalcOffsets' sizes_aligns 0 '[])) + (NegativeMod (CalcAlignment (GetSnds sizes_aligns))  (Snd (CalcOffsets' sizes_aligns 0 '[])) (CalcAlignment (GetSnds sizes_aligns) ) )
+
+type family NegativeMod (fst :: Nat) (snd :: Nat) (over :: Nat) :: Nat where
+    NegativeMod a b c = NegativeMod' a b c (CmpNat a b)
+
+type family NegativeMod' (fst :: Nat) (snd :: Nat) (over :: Nat) (cmp :: Ordering) :: Nat where
+    NegativeMod' a b c LT = Mod (c - (Mod (b-a) c)) c
+    NegativeMod' a b c _  = Mod (a-b) c
 
 {-# NOINLINE calcSize #-}
 -- | Calculates the size of the type/struct.

@@ -9,15 +9,15 @@ import Control.DeepSeq
 
 data C1 = C1 Int32                 deriving (Show, Generic, GStorable, NFData)
 data C2 = C2 Int8 Int32 Int16      deriving (Show, Generic, GStorable, NFData)
-data C3 = C3 C2 Int64 C1           deriving (Show, Generic, GStorable, NFData)
-data C4 = C4 Double Int8 C3        deriving (Show, Generic, GStorable, NFData)
-data C5 = C5 Int32 C2 C4           deriving (Show, Generic, GStorable, NFData)
+--data C3 = C3 C2 Int64 C1           deriving (Show, Generic, GStorable, NFData)
+--data C4 = C4 Double Int8 C3        deriving (Show, Generic, GStorable, NFData)
+--data C5 = C5 Int32 C2 C4           deriving (Show, Generic, GStorable, NFData)
 
 c1_def = C1 3
 c2_def = C2 3 10 8
-c3_def = C3 c2_def 11000 c1_def
-c4_def = C4 0.312 3 c3_def 
-c5_def = C5 100 c2_def c4_def 
+--c3_def = C3 c2_def 11000 c1_def
+--c4_def = C4 0.312 3 c3_def 
+--c5_def = C5 100 c2_def c4_def 
 
 
 data C1hw = C1hw Int32                 deriving (Show,Generic, NFData)

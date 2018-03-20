@@ -20,6 +20,8 @@ Portability : portable
 {-#LANGUAGE TypeFamilies #-}
 {-#LANGUAGE PolyKinds #-}
 
+{-#LANGUAGE MagicHash #-}
+
 module Foreign.Storable.Generic.Internal where
 --(
 --     GStorable'(..),
@@ -44,9 +46,11 @@ import Data.Proxy
 import Debug.Trace
 
 import Foreign.Storable.Generic.Tools
-import GHC.TypeLits
+import qualified GHC.TypeNats as TN
+import GHC.TypeLits 
 import GHC.Exts
-
+import GHC.Integer.GMP.Internals
+import GHC.Base(Int(..))
 -- Defining the generics ---
 
 class GStorable' f where
@@ -184,50 +188,58 @@ internalOffsets _ = calcOffsets $ zip sizes aligns
     where sizes = glistSizeOf'    (undefined :: f p)
           aligns= glistAlignment' (undefined :: f p)
 
---Check if URec or not.
 
 
-type family GetSizes (rep :: * -> *) :: [Nat] where
+type family GetSizes (rep :: * -> *) :: n where
     GetSizes (M1 _ _ f)  = GetSizes (f)
-    GetSizes ((f :+: k)) = '[0]
+    GetSizes ((f :+: k)) = Text "Sum types are not supported."
     GetSizes ((f :*: k)) = Concat [GetSizes f, GetSizes k]
     GetSizes (K1 _ c)    = '[GSize c]
+    GetSizes t           = Text "Could not traverse the type: " :<>: ShowType t
 
 
-type family GetAlignments (rep :: * -> *) :: [Nat] where
+type family GetAlignments (rep :: * -> *) :: n where
     GetAlignments (M1 _ _ f)  = GetAlignments (f)
-    GetAlignments ((f :+: k)) = '[0]
+    GetAlignments ((f :+: k)) = Text "Sum types are not supported."
     GetAlignments ((f :*: k)) = Concat [GetAlignments f, GetAlignments k]
     GetAlignments (K1 _ c)    = '[GAlignment c]
+    GetAlignments t           = Text "Could not traverse the type: " :<>: ShowType t
+
+type family Index (ix :: Nat) (ls :: [a]) :: a where
+    Index _ '[]    = Text "Index out of bounds" 
+    Index 0 (a:as) = a
+    Index ix (a:as) = Index (ix-1) (as)
 
 -- | The class uses the default Generic based implementations to 
 -- provide Storable instances for types made from primitive types.
 -- Does not work on Algebraic Data Types with more than one constructor.
 class GStorable a where
-    type GSize      a :: Nat
+    type GSize a :: Nat
     type GSize a = CalcSize (Zip (GSizes a) (GAlignments a))
     type GSizes a :: [Nat]
     type GSizes a = GetSizes (Rep a)
     type GAlignments a :: [Nat]
     type GAlignments a = GetAlignments (Rep a)
     type GAlignment a :: Nat
-    type GAlignment a = 0
+    type GAlignment a = CalcAlignment (GAlignments a)
+    type GOffsets   a :: [Nat]
+    type GOffsets   a = CalcOffsets (Zip (GSizes a) (GAlignments a)) 
    
     -- | Calculate the size of the type.
     {-# INLINE gsizeOf #-}
     gsizeOf :: a   -- ^ Element of a given type. Can be undefined.
             -> Int -- ^ Size.
-    default gsizeOf :: (Generic a, GStorable' (Rep a))
+    default gsizeOf :: (KnownNat (GSize a), Generic a, GStorable' (Rep a))
                     => a -> Int
-    gsizeOf _ = internalSizeOf (undefined :: Rep a p) 
+    gsizeOf _ = fromIntegral $ TN.natVal' (proxy# :: Proxy# (GSize a)) 
     
     -- | Calculate the alignment of the type.
     {-# INLINE galignment #-}
     galignment :: a   -- ^ Element of a given type. Can be undefined  
                -> Int -- ^ Alignment.
-    default galignment :: (Generic a, GStorable' (Rep a))
+    default galignment :: (KnownNat (GAlignment a), Generic a, GStorable' (Rep a))
                          => a -> Int
-    galignment _ = internalAlignment (undefined :: Rep a p) 
+    galignment _ = fromIntegral $ natVal (Proxy :: Proxy (GAlignment a)) 
 
     -- | Read the variable from a given pointer.
     gpeekByteOff :: Ptr b -- ^ Pointer to the variable
