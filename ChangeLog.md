@@ -1,5 +1,9 @@
 # Revision history for derive-storable
 
+## 0.1.1.2  -- 2018-04-30
+
+* Added U1 instance for GHC.Generics.
+
 ## 0.1.1.1  -- 2017-10-05
 
 * Fixed a bug with POSIX types enabled on non POSIX systems.
