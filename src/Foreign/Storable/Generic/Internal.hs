@@ -85,6 +85,19 @@ instance (GStorable' f) => GStorable' (M1 i t f) where
     glistSizeOf' _ = glistSizeOf' (undefined :: f p)
     glistAlignment' _ = glistAlignment' (undefined :: f p)
 
+instance GStorable' U1 where
+    -- Wrap the peeked value in metadata.
+    {-# INLINE gpeekByteOff' #-}
+    gpeekByteOff' offsets ix ptr offset = return U1
+    -- Discard the metadata and go further.
+    {-# INLINE gpokeByteOff' #-}
+    gpokeByteOff' offsets ix ptr offset (U1) = return ()
+    
+
+    gnumberOf' (U1)   = 0
+    glistSizeOf'    _ = []
+    glistAlignment' _ = []
+
 instance (GStorable' f, GStorable' g) => GStorable' (f :*: g) where
     -- Tree-like traversal for reading the type.
     {-# INLINE gpeekByteOff' #-}
