@@ -42,7 +42,7 @@ test-suite c_alignment
                      , Foreign.Storable.Generic.Tools
                      , TestCases 
   
-  build-depends:       base >= 4.8 && < 4.12, hspec >= 2.4,QuickCheck >= 2.10
+  build-depends:       base >= 4.8 && < 4.12, hspec >= 2.4, hspec-discover, QuickCheck >= 2.10
   
   default-language:    Haskell2010
 
@@ -60,7 +60,7 @@ test-suite spec
                        , Foreign.Storable.Generic.ToolsSpec
                        , GenericType
 
-  build-depends:       base >= 4.8 && < 4.12, hspec >= 2.4, QuickCheck >= 2.10
+  build-depends:       base >= 4.8 && < 4.12, hspec >= 2.4, hspec-discover, QuickCheck >= 2.10
 
   default-language:    Haskell2010
 
