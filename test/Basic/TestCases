@@ -1,6 +1,9 @@
+-- Empties
+C0 = C0
+
 C1 = Int32 Int32
 
-C2 = Int32 Int16 Int8
+C2 = Int32 C0 Int16 Int8
 
 C3 = Int32 Int8 Int16
 
