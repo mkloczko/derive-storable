@@ -3,6 +3,9 @@
 ## 0.1.2.0  -- 2018-04-30
 
 * Added U1 instance for GHC.Generics.
+## 0.1.1.1 rev1 -- 2018-03-20
+
+* Bump to GHC 8.4.1
 
 ## 0.1.1.1  -- 2017-10-05
 
