@@ -1,6 +1,6 @@
 # Revision history for derive-storable
 
-## 0.1.1.2  -- 2018-04-30
+## 0.1.2.0  -- 2018-04-30
 
 * Added U1 instance for GHC.Generics.
 

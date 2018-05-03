@@ -3,6 +3,33 @@
 #include <stdalign.h>
 #include <stdlib.h>
 #include "HsFFI.h"
+typedef struct C0{
+} C0;
+
+C0 * newC0(){
+    C0 * ret = (C0*) malloc(sizeof(C0));
+    return ret;
+}
+
+void pokeC0(C0* val){
+}
+
+int checkOffsetsC0(HsInt16 *offs){
+    return 1;
+}
+
+int checkFieldsC0(C0* s1, C0* s2){
+    return 1; 
+}
+
+HsInt16 getSizeC0() {
+    return sizeof(C0);
+}
+
+HsInt16 getAlignmentC0() {
+    return alignof(C0);
+}
+
 typedef struct C1{
     HsInt32 a;
     HsInt32 b;
@@ -42,36 +69,41 @@ HsInt16 getAlignmentC1() {
 
 typedef struct C2{
     HsInt32 a;
-    HsInt16 b;
-    HsInt8 c;
+    C0 b;
+    HsInt16 c;
+    HsInt8 d;
 } C2;
 
-C2 * newC2(HsInt32 a, HsInt16 b, HsInt8 c){
+C2 * newC2(HsInt32 a, C0* b, HsInt16 c, HsInt8 d){
     C2 * ret = (C2*) malloc(sizeof(C2));
     ret->a = a;
-    ret->b = b;
+    ret->b = *b;
     ret->c = c;
+    ret->d = d;
     return ret;
 }
 
-void pokeC2(C2* val, HsInt32 a, HsInt16 b, HsInt8 c){
+void pokeC2(C2* val, HsInt32 a, C0* b, HsInt16 c, HsInt8 d){
     val->a = a;
-    val->b = b;
+    val->b = *b;
     val->c = c;
+    val->d = d;
 }
 
 int checkOffsetsC2(HsInt16 *offs){
     int a = offsetof(C2, a) == offs[0];
     int b = offsetof(C2, b) == offs[1];
     int c = offsetof(C2, c) == offs[2];
-    return a && b && c;
+    int d = offsetof(C2, d) == offs[3];
+    return a && b && c && d;
 }
 
 int checkFieldsC2(C2* s1, C2* s2){
     int a = s1->a == s2->a;
-    int b = s1->b == s2->b;
+    int b = checkFieldsC0(&(s1->b),&(s2->b));
     int c = s1->c == s2->c;
-    return a && b && c;
+    int d = s1->d == s2->d;
+    return a && b && c && d;
 }
 
 HsInt16 getSizeC2() {
@@ -167,29 +199,35 @@ HsInt16 getAlignmentC4() {
 }
 
 typedef struct C5{
-    HsInt32 a;
-    HsInt16 b;
-    HsInt8 c;
-    HsInt8 d;
+    C0 a;
+    C0 b;
+    HsInt32 c;
+    HsInt16 d;
     HsInt8 e;
+    HsInt8 f;
+    HsInt8 g;
 } C5;
 
-C5 * newC5(HsInt32 a, HsInt16 b, HsInt8 c, HsInt8 d, HsInt8 e){
+C5 * newC5(C0* a, C0* b, HsInt32 c, HsInt16 d, HsInt8 e, HsInt8 f, HsInt8 g){
     C5 * ret = (C5*) malloc(sizeof(C5));
-    ret->a = a;
-    ret->b = b;
+    ret->a = *a;
+    ret->b = *b;
     ret->c = c;
     ret->d = d;
     ret->e = e;
+    ret->f = f;
+    ret->g = g;
     return ret;
 }
 
-void pokeC5(C5* val, HsInt32 a, HsInt16 b, HsInt8 c, HsInt8 d, HsInt8 e){
-    val->a = a;
-    val->b = b;
+void pokeC5(C5* val, C0* a, C0* b, HsInt32 c, HsInt16 d, HsInt8 e, HsInt8 f, HsInt8 g){
+    val->a = *a;
+    val->b = *b;
     val->c = c;
     val->d = d;
     val->e = e;
+    val->f = f;
+    val->g = g;
 }
 
 int checkOffsetsC5(HsInt16 *offs){
@@ -198,16 +236,20 @@ int checkOffsetsC5(HsInt16 *offs){
     int c = offsetof(C5, c) == offs[2];
     int d = offsetof(C5, d) == offs[3];
     int e = offsetof(C5, e) == offs[4];
-    return a && b && c && d && e;
+    int f = offsetof(C5, f) == offs[5];
+    int g = offsetof(C5, g) == offs[6];
+    return a && b && c && d && e && f && g;
 }
 
 int checkFieldsC5(C5* s1, C5* s2){
-    int a = s1->a == s2->a;
-    int b = s1->b == s2->b;
+    int a = checkFieldsC0(&(s1->a),&(s2->a));
+    int b = checkFieldsC0(&(s1->b),&(s2->b));
     int c = s1->c == s2->c;
     int d = s1->d == s2->d;
     int e = s1->e == s2->e;
-    return a && b && c && d && e;
+    int f = s1->f == s2->f;
+    int g = s1->g == s2->g;
+    return a && b && c && d && e && f && g;
 }
 
 HsInt16 getSizeC5() {
@@ -515,24 +557,27 @@ HsInt16 getAlignmentC12() {
 typedef struct C13{
     C12 a;
     C12 b;
-    C12 c;
+    C0 c;
     C12 d;
+    C12 e;
 } C13;
 
-C13 * newC13(C12* a, C12* b, C12* c, C12* d){
+C13 * newC13(C12* a, C12* b, C0* c, C12* d, C12* e){
     C13 * ret = (C13*) malloc(sizeof(C13));
     ret->a = *a;
     ret->b = *b;
     ret->c = *c;
     ret->d = *d;
+    ret->e = *e;
     return ret;
 }
 
-void pokeC13(C13* val, C12* a, C12* b, C12* c, C12* d){
+void pokeC13(C13* val, C12* a, C12* b, C0* c, C12* d, C12* e){
     val->a = *a;
     val->b = *b;
     val->c = *c;
     val->d = *d;
+    val->e = *e;
 }
 
 int checkOffsetsC13(HsInt16 *offs){
@@ -540,15 +585,17 @@ int checkOffsetsC13(HsInt16 *offs){
     int b = offsetof(C13, b) == offs[1];
     int c = offsetof(C13, c) == offs[2];
     int d = offsetof(C13, d) == offs[3];
-    return a && b && c && d;
+    int e = offsetof(C13, e) == offs[4];
+    return a && b && c && d && e;
 }
 
 int checkFieldsC13(C13* s1, C13* s2){
     int a = checkFieldsC12(&(s1->a),&(s2->a));
     int b = checkFieldsC12(&(s1->b),&(s2->b));
-    int c = checkFieldsC12(&(s1->c),&(s2->c));
+    int c = checkFieldsC0(&(s1->c),&(s2->c));
     int d = checkFieldsC12(&(s1->d),&(s2->d));
-    return a && b && c && d;
+    int e = checkFieldsC12(&(s1->e),&(s2->e));
+    return a && b && c && d && e;
 }
 
 HsInt16 getSizeC13() {
@@ -650,36 +697,41 @@ HsInt16 getAlignmentC15() {
 
 typedef struct C16{
     C10 a;
-    C15 b;
-    C7 c;
+    C0 b;
+    C15 c;
+    C7 d;
 } C16;
 
-C16 * newC16(C10* a, C15* b, C7* c){
+C16 * newC16(C10* a, C0* b, C15* c, C7* d){
     C16 * ret = (C16*) malloc(sizeof(C16));
     ret->a = *a;
     ret->b = *b;
     ret->c = *c;
+    ret->d = *d;
     return ret;
 }
 
-void pokeC16(C16* val, C10* a, C15* b, C7* c){
+void pokeC16(C16* val, C10* a, C0* b, C15* c, C7* d){
     val->a = *a;
     val->b = *b;
     val->c = *c;
+    val->d = *d;
 }
 
 int checkOffsetsC16(HsInt16 *offs){
     int a = offsetof(C16, a) == offs[0];
     int b = offsetof(C16, b) == offs[1];
     int c = offsetof(C16, c) == offs[2];
-    return a && b && c;
+    int d = offsetof(C16, d) == offs[3];
+    return a && b && c && d;
 }
 
 int checkFieldsC16(C16* s1, C16* s2){
     int a = checkFieldsC10(&(s1->a),&(s2->a));
-    int b = checkFieldsC15(&(s1->b),&(s2->b));
-    int c = checkFieldsC7(&(s1->c),&(s2->c));
-    return a && b && c;
+    int b = checkFieldsC0(&(s1->b),&(s2->b));
+    int c = checkFieldsC15(&(s1->c),&(s2->c));
+    int d = checkFieldsC7(&(s1->d),&(s2->d));
+    return a && b && c && d;
 }
 
 HsInt16 getSizeC16() {

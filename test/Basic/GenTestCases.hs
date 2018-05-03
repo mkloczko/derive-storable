@@ -13,6 +13,7 @@ data Info = Info String [String] deriving (Show)
 getInfo :: String -> Maybe Info
 getInfo str = case words str of
     (type_name:"=":f1:fields) -> Just $ Info type_name (f1:fields)
+    [type_name] -> Just $ Info type_name []
     otheriwse              -> Nothing
 
 -------------
@@ -55,14 +56,16 @@ genCheckable (HSStruct name types) = concat [fst_line, fields_line, offsets_line
 genArbitrary :: HSStruct -> String
 genArbitrary (HSStruct name types) = concat [fst_line, snd_line]
     where fst_line    = concat ["instance Arbitrary ", name, " where \n"]
-          snd_line    = concat ["    arbitrary = ",name, " <$> ", arbitraries , "\n\n"]
+          snd_line    = if length arbitraries > 0 
+                          then concat ["    arbitrary = ",name, " <$> ", arbitraries , "\n\n"]
+                          else concat ["    arbitrary = return ",name, "\n\n"]
           arbitraries = concat $ intersperse " <*> "$ take (length types) $ repeat "arbitrary"
 
 genFFI :: HSStruct -> String
 genFFI (HSStruct name types) = concat [new_line, fields_line, offsets_line, size_line, alignment] 
     where new_line    = concat [beginning, "new"         ,name," :: ", arguments,"\n"]
           types'      = map (\(t,b) -> if b then t else "Ptr " ++ t) types
-          arguments   = concat [concat (intersperse " -> " types'), " -> IO (Ptr ", name, ")"]  
+          arguments   = concat [concat (intersperse " -> " (types' ++ ["IO (Ptr "++ name++ ")"]))]  
           fields_line = concat [beginning, "checkFields" ,name, " :: Ptr ", name, " -> Ptr ",name, " -> IO Int8\n"] 
           offsets_line= concat [beginning, "checkOffsets",name, " :: Ptr Int16 -> IO Int8\n"] 
           size_line   = concat [beginning, "getSize"     ,name, " :: IO Int16\n"] 
@@ -165,8 +168,8 @@ genConstructor cs@(CStruct name types_names) = concat [fst_line, snd_line, conca
 
 genPoke :: CStruct -> String
 genPoke cs@(CStruct name types_names) = concat [fst_line, concat middle_lines, last_line] 
-    where fst_line = concat ["void poke",name,"(", name,"* val, ", args,"){\n"]
-          args     = concat $ intersperse ", " $ cstructArguments cs
+    where fst_line = concat ["void poke",name,"(", args, "){\n"]
+          args     = concat $ intersperse ", " $(concat [name, "* val"]) :cstructArguments cs
           middle_lines = zipWith (\n1 n2 -> concat ["    val->",n1," = ", n2, ";\n"]) (map snd types_names) (map accessAsPointer types_names)
           last_line = "}\n\n"
 
@@ -175,7 +178,9 @@ genCheckOffsets (CStruct name types_names) = concat [fst_line, concat middle_lin
     where fst_line = concat ["int checkOffsets",name,"(HsInt16 *offs){\n"]
           names_ixs = zip (map snd types_names) (map show [0,1..])
           middle_lines = map (\(n,i) -> concat ["    int ",n," = offsetof(",name,", ",n,") == offs[",i,"];\n"]) names_ixs
-          prelst_line  = concat ["    return ",concat $ intersperse " && " $ map snd types_names, ";\n"]
+          prelst_line  = if length types_names > 0
+                           then concat ["    return ",concat $ intersperse " && " $ map snd types_names, ";\n"]
+                           else "    return 1;\n"
           last_line    = "}\n\n"
 
 genCheckFields :: CStruct -> String
@@ -185,7 +190,9 @@ genCheckFields (CStruct name types_names) = concat [fst_line, concat middle_line
           middle_lines = map (\tp@((_,_),n) -> concat ["    int ",n," = ", as_prim tp, ";\n"]) types_names
               where as_prim ((_,True ),n) = concat ["s1->",n, " == s2->",n]
                     as_prim ((t,False),n) = concat ["checkFields",t,"(&(s1->",n,"),&(s2->",n,"))"]
-          prelst_line  = concat ["    return ",concat $ intersperse " && " names, ";\n"]
+          prelst_line  = if length types_names > 0
+                           then concat ["    return ",concat $ intersperse " && " names, ";\n"]
+                           else "    return 1; \n"
           last_line = "}\n\n"
 
 genGetSize :: CStruct -> String

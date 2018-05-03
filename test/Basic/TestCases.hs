@@ -50,6 +50,27 @@ newStorable val = do
 goffsets :: (GStorable' (Rep a), GStorable a, Generic a) => a -> [Int16]
 goffsets v = map fromIntegral $ internalOffsets (from v)
 
+data C0 = C0 
+    deriving (Show, Eq, Generic, GStorable)
+
+instance Checkable C0 where
+    checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC0 ptr1 ptr2
+    checkOffsets   _    offs = (==1) <$> checkOffsetsC0 offs
+    getSize        a          = fromIntegral <$> getSizeC0
+    getAlignment   a          = fromIntegral <$> getAlignmentC0
+    new (C0 ) = do
+        ptr <- newC0 
+        return ptr
+
+instance Arbitrary C0 where 
+    arbitrary = return C0
+
+foreign import ccall newC0 :: IO (Ptr C0)
+foreign import ccall checkFieldsC0 :: Ptr C0 -> Ptr C0 -> IO Int8
+foreign import ccall checkOffsetsC0 :: Ptr Int16 -> IO Int8
+foreign import ccall getSizeC0 :: IO Int16
+foreign import ccall getAlignmentC0 :: IO Int16
+
 data C1 = C1 Int32 Int32
     deriving (Show, Eq, Generic, GStorable)
 
@@ -71,7 +92,7 @@ foreign import ccall checkOffsetsC1 :: Ptr Int16 -> IO Int8
 foreign import ccall getSizeC1 :: IO Int16
 foreign import ccall getAlignmentC1 :: IO Int16
 
-data C2 = C2 Int32 Int16 Int8
+data C2 = C2 Int32 C0 Int16 Int8
     deriving (Show, Eq, Generic, GStorable)
 
 instance Checkable C2 where
@@ -79,14 +100,16 @@ instance Checkable C2 where
     checkOffsets   _    offs = (==1) <$> checkOffsetsC2 offs
     getSize        a          = fromIntegral <$> getSizeC2
     getAlignment   a          = fromIntegral <$> getAlignmentC2
-    new (C2 a b c) = do
-        ptr <- newC2 a b c
+    new (C2 a b c d) = do
+        ptr_b <- newStorable b
+        ptr <- newC2 a ptr_b c d
+        free ptr_b
         return ptr
 
 instance Arbitrary C2 where 
-    arbitrary = C2 <$> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = C2 <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
-foreign import ccall newC2 :: Int32 -> Int16 -> Int8 -> IO (Ptr C2)
+foreign import ccall newC2 :: Int32 -> Ptr C0 -> Int16 -> Int8 -> IO (Ptr C2)
 foreign import ccall checkFieldsC2 :: Ptr C2 -> Ptr C2 -> IO Int8
 foreign import ccall checkOffsetsC2 :: Ptr Int16 -> IO Int8
 foreign import ccall getSizeC2 :: IO Int16
@@ -134,7 +157,7 @@ foreign import ccall checkOffsetsC4 :: Ptr Int16 -> IO Int8
 foreign import ccall getSizeC4 :: IO Int16
 foreign import ccall getAlignmentC4 :: IO Int16
 
-data C5 = C5 Int32 Int16 Int8 Int8 Int8
+data C5 = C5 C0 C0 Int32 Int16 Int8 Int8 Int8
     deriving (Show, Eq, Generic, GStorable)
 
 instance Checkable C5 where
@@ -142,14 +165,18 @@ instance Checkable C5 where
     checkOffsets   _    offs = (==1) <$> checkOffsetsC5 offs
     getSize        a          = fromIntegral <$> getSizeC5
     getAlignment   a          = fromIntegral <$> getAlignmentC5
-    new (C5 a b c d e) = do
-        ptr <- newC5 a b c d e
+    new (C5 a b c d e f g) = do
+        ptr_a <- newStorable a
+        ptr_b <- newStorable b
+        ptr <- newC5 ptr_a ptr_b c d e f g
+        free ptr_a
+        free ptr_b
         return ptr
 
 instance Arbitrary C5 where 
-    arbitrary = C5 <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = C5 <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
-foreign import ccall newC5 :: Int32 -> Int16 -> Int8 -> Int8 -> Int8 -> IO (Ptr C5)
+foreign import ccall newC5 :: Ptr C0 -> Ptr C0 -> Int32 -> Int16 -> Int8 -> Int8 -> Int8 -> IO (Ptr C5)
 foreign import ccall checkFieldsC5 :: Ptr C5 -> Ptr C5 -> IO Int8
 foreign import ccall checkOffsetsC5 :: Ptr Int16 -> IO Int8
 foreign import ccall getSizeC5 :: IO Int16
@@ -318,7 +345,7 @@ foreign import ccall checkOffsetsC12 :: Ptr Int16 -> IO Int8
 foreign import ccall getSizeC12 :: IO Int16
 foreign import ccall getAlignmentC12 :: IO Int16
 
-data C13 = C13 C12 C12 C12 C12
+data C13 = C13 C12 C12 C0 C12 C12
     deriving (Show, Eq, Generic, GStorable)
 
 instance Checkable C13 where
@@ -326,22 +353,24 @@ instance Checkable C13 where
     checkOffsets   _    offs = (==1) <$> checkOffsetsC13 offs
     getSize        a          = fromIntegral <$> getSizeC13
     getAlignment   a          = fromIntegral <$> getAlignmentC13
-    new (C13 a b c d) = do
+    new (C13 a b c d e) = do
         ptr_a <- newStorable a
         ptr_b <- newStorable b
         ptr_c <- newStorable c
         ptr_d <- newStorable d
-        ptr <- newC13 ptr_a ptr_b ptr_c ptr_d
+        ptr_e <- newStorable e
+        ptr <- newC13 ptr_a ptr_b ptr_c ptr_d ptr_e
         free ptr_a
         free ptr_b
         free ptr_c
         free ptr_d
+        free ptr_e
         return ptr
 
 instance Arbitrary C13 where 
-    arbitrary = C13 <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = C13 <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
-foreign import ccall newC13 :: Ptr C12 -> Ptr C12 -> Ptr C12 -> Ptr C12 -> IO (Ptr C13)
+foreign import ccall newC13 :: Ptr C12 -> Ptr C12 -> Ptr C0 -> Ptr C12 -> Ptr C12 -> IO (Ptr C13)
 foreign import ccall checkFieldsC13 :: Ptr C13 -> Ptr C13 -> IO Int8
 foreign import ccall checkOffsetsC13 :: Ptr Int16 -> IO Int8
 foreign import ccall getSizeC13 :: IO Int16
@@ -401,7 +430,7 @@ foreign import ccall checkOffsetsC15 :: Ptr Int16 -> IO Int8
 foreign import ccall getSizeC15 :: IO Int16
 foreign import ccall getAlignmentC15 :: IO Int16
 
-data C16 = C16 C10 C15 C7
+data C16 = C16 C10 C0 C15 C7
     deriving (Show, Eq, Generic, GStorable)
 
 instance Checkable C16 where
@@ -409,20 +438,22 @@ instance Checkable C16 where
     checkOffsets   _    offs = (==1) <$> checkOffsetsC16 offs
     getSize        a          = fromIntegral <$> getSizeC16
     getAlignment   a          = fromIntegral <$> getAlignmentC16
-    new (C16 a b c) = do
+    new (C16 a b c d) = do
         ptr_a <- newStorable a
         ptr_b <- newStorable b
         ptr_c <- newStorable c
-        ptr <- newC16 ptr_a ptr_b ptr_c
+        ptr_d <- newStorable d
+        ptr <- newC16 ptr_a ptr_b ptr_c ptr_d
         free ptr_a
         free ptr_b
         free ptr_c
+        free ptr_d
         return ptr
 
 instance Arbitrary C16 where 
-    arbitrary = C16 <$> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = C16 <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
-foreign import ccall newC16 :: Ptr C10 -> Ptr C15 -> Ptr C7 -> IO (Ptr C16)
+foreign import ccall newC16 :: Ptr C10 -> Ptr C0 -> Ptr C15 -> Ptr C7 -> IO (Ptr C16)
 foreign import ccall checkFieldsC16 :: Ptr C16 -> Ptr C16 -> IO Int8
 foreign import ccall checkOffsetsC16 :: Ptr Int16 -> IO Int8
 foreign import ccall getSizeC16 :: IO Int16
