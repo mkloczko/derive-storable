@@ -8,7 +8,6 @@
 language: c
 sudo: false
 dist: trusty
-
 git:
   submodules: false  # whether to recursively clone submodules
 
@@ -25,7 +24,6 @@ before_cache:
   - rm -fv $HOME/.cabal/packages/hackage.haskell.org/01-index.cache
   - rm -fv $HOME/.cabal/packages/hackage.haskell.org/01-index.tar
   - rm -fv $HOME/.cabal/packages/hackage.haskell.org/01-index.tar.idx
-
   - rm -rfv $HOME/.cabal/packages/head.hackage
 
 matrix:
@@ -56,7 +54,6 @@ matrix:
    - env: CABALVER=head GHCVER=head
 
 
->>>>>>> master
 
 before_install:
   - HC=${CC}
