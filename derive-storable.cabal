@@ -35,7 +35,8 @@ benchmark benchmark
   default-language:    Haskell2010
   other-modules:       TestCases
   Main-is:             Main.hs
-  build-depends:       base >= 4.8 && < 4.13, deepseq >= 1.4.2, criterion >= 1.1.0, derive-storable
+  build-depends:       base >= 4.8 && < 4.13, deepseq, criterion >= 1.1.0
+                    ,  derive-storable 
 
 
 
