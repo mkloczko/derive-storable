@@ -20,12 +20,12 @@ build-type:          Simple
 extra-source-files:  ChangeLog.md README.md
 
 cabal-version:       >=1.10
-tested-with:         GHC==7.10.3, GHC==8.0.1, GHC==8.0.2, GHC==8.2.1, GHC==8.4.1, GHC==8.4.2
+tested-with:         GHC==8.0.1, GHC==8.0.2, GHC==8.2.1, GHC==8.4.1, GHC==8.4.2
 
 library
   exposed-modules:     Foreign.Storable.Generic, Foreign.Storable.Generic.Tools
                      , Foreign.Storable.Generic.Internal, Foreign.Storable.Generic.Instances       
-  build-depends:       base >=4.8 && < 4.13
+  build-depends:       base >=4.8 && < 5
   hs-source-dirs:      src
   default-language:    Haskell2010
 
@@ -35,8 +35,8 @@ benchmark benchmark
   default-language:    Haskell2010
   other-modules:       TestCases
   Main-is:             Main.hs
-  build-depends:       base >= 4.9 && < 4.13, deepseq, criterion >= 1.1.0
-                    ,  derive-storable
+  build-depends:       base >= 4.8 && < 5, deepseq, criterion >= 1.1.0
+                    ,  derive-storable 
 
 
 
@@ -52,7 +52,7 @@ test-suite c_alignment
                      , Foreign.Storable.Generic.Tools
                      , TestCases 
   
-  build-depends:       base >= 4.8 && < 4.13, hspec >= 2.4, QuickCheck >= 2.10
+  build-depends:       base >= 4.8 && < 5, hspec >= 2.4, QuickCheck >= 2.10
   
   default-language:    Haskell2010
 
@@ -70,7 +70,7 @@ test-suite spec
                        , Foreign.Storable.Generic.ToolsSpec
                        , GenericType
 
-  build-depends:       base >= 4.8 && < 4.13, hspec >= 2.4, QuickCheck >= 2.10
+  build-depends:       base >= 4.8 && < 5, hspec >= 2.4, QuickCheck >= 2.10
 
   default-language:    Haskell2010
 

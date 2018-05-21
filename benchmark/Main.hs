@@ -1,4 +1,3 @@
-{-#LANGUAGE TypeApplications #-}
 {-#LANGUAGE AllowAmbiguousTypes #-}
 {-#LANGUAGE ScopedTypeVariables #-}
 
@@ -81,20 +80,20 @@ singularTests =
        ]
    , bgroup "peek" $
        [ bgroup "Handwritten" $
-           [ env (malloc @C0hw) $ \ptr -> bench "C0" $ nfIO (peek ptr)
-           , env (malloc @C1hw) $ \ptr -> bench "C1" $ nfIO (peek ptr)
-           , env (malloc @C2hw) $ \ptr -> bench "C2" $ nfIO (peek ptr)
-           , env (malloc @C3hw) $ \ptr -> bench "C3" $ nfIO (peek ptr)
-           , env (malloc @C4hw) $ \ptr -> bench "C4" $ nfIO (peek ptr)
-           , env (malloc @C5hw) $ \ptr -> bench "C5" $ nfIO (peek ptr)
+           [ env (malloc :: IO (Ptr C0hw)) $ \ptr -> bench "C0" $ nfIO (peek ptr)
+           , env (malloc :: IO (Ptr C1hw)) $ \ptr -> bench "C1" $ nfIO (peek ptr)
+           , env (malloc :: IO (Ptr C2hw)) $ \ptr -> bench "C2" $ nfIO (peek ptr)
+           , env (malloc :: IO (Ptr C3hw)) $ \ptr -> bench "C3" $ nfIO (peek ptr)
+           , env (malloc :: IO (Ptr C4hw)) $ \ptr -> bench "C4" $ nfIO (peek ptr)
+           , env (malloc :: IO (Ptr C5hw)) $ \ptr -> bench "C5" $ nfIO (peek ptr)
            ]
        , bgroup "GStorable" $
-           [ env (malloc @C0  ) $ \ptr -> bench "C0" $ nfIO (peek ptr)
-           , env (malloc @C1  ) $ \ptr -> bench "C1" $ nfIO (peek ptr)
-           , env (malloc @C2  ) $ \ptr -> bench "C2" $ nfIO (peek ptr)
-           , env (malloc @C3  ) $ \ptr -> bench "C3" $ nfIO (peek ptr)
-           , env (malloc @C4  ) $ \ptr -> bench "C4" $ nfIO (peek ptr)
-           , env (malloc @C5  ) $ \ptr -> bench "C5" $ nfIO (peek ptr)
+           [ env (malloc :: IO (Ptr C0)) $ \ptr -> bench "C0" $ nfIO (peek ptr)
+           , env (malloc :: IO (Ptr C1)) $ \ptr -> bench "C1" $ nfIO (peek ptr)
+           , env (malloc :: IO (Ptr C2)) $ \ptr -> bench "C2" $ nfIO (peek ptr)
+           , env (malloc :: IO (Ptr C3)) $ \ptr -> bench "C3" $ nfIO (peek ptr)
+           , env (malloc :: IO (Ptr C4)) $ \ptr -> bench "C4" $ nfIO (peek ptr)
+           , env (malloc :: IO (Ptr C5)) $ \ptr -> bench "C5" $ nfIO (peek ptr)
            ]
        ] 
   , bgroup "poke" $
