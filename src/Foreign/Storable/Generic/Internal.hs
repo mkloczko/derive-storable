@@ -27,7 +27,6 @@ Portability : portable
 module Foreign.Storable.Generic.Internal (
      GStorable'(..),
      GStorable (..),
---      GStorableSum (..),
      internalSizeOf,
      internalAlignment,
      internalPeekByteOff,
@@ -257,8 +256,15 @@ class GStorableChoice' (choice :: Bool) a where
 
 instance ( Generic a, KnownNat (SumArity (Rep a))
          , GStorableSum' (Rep a), IsSumType (Rep a) ~ True) => GStorableChoice' True a where
-    chSizeOf    _ = gsizeOfSum' (undefined :: Rep a p)
-    chAlignment _ = alignOfSum' (undefined :: Rep a p)
+    chSizeOf    _ = calcSize $ zip sizes aligns
+        where sizes  = (word8s:gsizeOfSum' (undefined :: Rep a p):[])
+              aligns = (word8a:alignOfSum' (undefined :: Rep a p):[])
+              word8s = sizeOf    (undefined :: Word8)
+              word8a = alignment (undefined :: Word8)
+    
+    chAlignment _ = calcAlignment $ (word8a:align:[])
+        where align  = alignOfSum' (undefined :: Rep a p)
+              word8a = alignment   (undefined :: Word8)
     chPeekByteOff ptr off = do
         choice <- peekByteOff ptr off :: IO Word8
         to <$> gpeekByteOffSum' (fromIntegral choice) ptr (off + chAlignment @True (undefined :: a))
@@ -288,20 +294,14 @@ type family ConstraintsP' (t :: Bool) a where
     ConstraintsP' True   a = ( Generic a, GStorableSum' (Rep a))
     ConstraintsP' False  a = ( KnownNat (NoFields (Rep a)), Generic a, GStorable' (Rep a))
 
-
 class GStorableSum' f where
     seeFirstByte'    :: f p -> Int -> Word8
+    -- | The size of the biggest subtree
     gsizeOfSum'      :: f p -> Int
+    -- | Alignment of the biggest subtree
     alignOfSum'      :: f p -> Int
     gpeekByteOffSum' :: Int -> Ptr b -> Int -> IO (f p)
     gpokeByteOffSum' ::        Ptr b -> Int -> f p -> IO ()
-
-instance (GStorableSum' f) => GStorableSum' (M1 S t f) where
-    seeFirstByte'    (M1 v) acc = seeFirstByte' v acc
-    gsizeOfSum'      (M1 v)     = error "Shouldn't be here"
-    alignOfSum'      (M1 v)     = error "Shouldn't be here"
-    gpeekByteOffSum' _ _ _      = error "Shouldn't be here"
-    gpokeByteOffSum' _ _ _      = error "Shouldn't be here"
 
 instance (GStorableSum' f) => GStorableSum' (M1 D t f) where
     seeFirstByte'    (M1 v) acc = seeFirstByte' v acc
@@ -312,14 +312,8 @@ instance (GStorableSum' f) => GStorableSum' (M1 D t f) where
 
 instance (KnownNat (NoFields f), GStorable' f, GStorableSum' f) => GStorableSum' (M1 C t f) where
     seeFirstByte' (M1 v) acc = fromIntegral acc
-    gsizeOfSum'   (M1 v)     = calcSize $ zip sizes aligns
-        where sizes  = (word8s:) $ glistSizeOf'    (undefined :: f p)
-              aligns = (word8a:) $ glistAlignment' (undefined :: f p)
-              word8s = sizeOf    (undefined :: Word8)
-              word8a = alignment (undefined :: Word8)
-    alignOfSum'   _  = calcAlignment aligns
-        where aligns = (word8a:) $ glistAlignment' (undefined :: f p)
-              word8a = alignment (undefined :: Word8)
+    gsizeOfSum'   (M1 v)     = internalSizeOf    v
+    alignOfSum'   (M1 v)     = internalAlignment v
     gpeekByteOffSum' _ ptr off   = M1 <$> internalPeekByteOff ptr off
     gpokeByteOffSum'   ptr off v = internalPokeByteOff ptr off v
 
@@ -335,6 +329,14 @@ instance ( KnownNat (SumArity g), KnownNat (SumArity f)
         where arityL = sumArity (undefined :: f p) 
     gpokeByteOffSum'        ptr off (R1 v) = gpokeByteOffSum' ptr off v
     gpokeByteOffSum'        ptr off (L1 v) = gpokeByteOffSum' ptr off v
+
+instance (GStorableSum' f) => GStorableSum' (M1 S t f) where
+    seeFirstByte'    (M1 v) acc = seeFirstByte' v acc
+    gsizeOfSum'      (M1 v)     = error "Shouldn't be here"
+    alignOfSum'      (M1 v)     = error "Shouldn't be here"
+    gpeekByteOffSum' _ _ _      = error "Shouldn't be here"
+    gpokeByteOffSum' _ _ _      = error "Shouldn't be here"
+
 
 instance GStorableSum' (f :*: g) where
     seeFirstByte' (l :*: g) acc = undefined
@@ -371,28 +373,3 @@ internalTagValue :: ( KnownNat (SumArity (Rep a))
 internalTagValue (a :: a) = seeFirstByte' (from a) (sumArity (undefined :: Rep a p))
 
 
--- class GStorableSum a where
---     sizeOfSum :: a -> Int
---     default sizeOfSum :: ( GStorableSum' (Rep a), Generic a) 
---                       => a -> Int
---     sizeOfSum a = gsizeOfSum' (undefined :: Rep a p)
--- 
---     alignOfSum :: a -> Int
---     default alignOfSum :: ( GStorableSum' (Rep a), Generic a) 
---                        => a -> Int
---     alignOfSum a = alignOfSum' (undefined :: Rep a p)
--- 
---     gpeekByteOffSum :: Ptr b -> Int -> IO a
---     default gpeekByteOffSum :: ( GStorableSum' (Rep a), Generic a) 
---                             => Ptr b -> Int -> IO a
---     gpeekByteOffSum ptr off = do
---         choice <- peekByteOff ptr off :: IO Word8
---         to <$> gpeekByteOffSum' (fromIntegral choice) ptr (off + alignOfSum (undefined :: a))
--- 
---     gpokeByteOffSum :: Ptr b -> Int -> a -> IO ()
---     default gpokeByteOffSum :: ( GStorableSum' (Rep a), Generic a) 
---                             => Ptr b -> Int -> a -> IO ()
---     gpokeByteOffSum ptr off v = do
---         pokeByteOff ptr off (internalTagValue v - 1)
---         gpokeByteOffSum' ptr (off + alignOfSum v) (from v)
-        

@@ -920,3 +920,588 @@ HsInt16 getAlignmentC20() {
     return alignof(C20);
 }
 
+typedef struct S0_1{
+    HsInt8 a;
+} S0_1;
+
+typedef struct S0_2{
+    HsInt16 a;
+} S0_2;
+
+typedef union S0_union{
+    S0_1 a;
+    S0_2 b;
+} S0_union;
+
+typedef struct S0 {
+    HsWord8 tag;
+    S0_union val;
+} S0;
+
+S0 * newS0_1(HsInt8 a){
+    S0 * ret = (S0*) malloc(sizeof(S0));
+    ret->tag = 0;
+    ret->val.a.a = a;
+    return ret;
+}
+
+S0 * newS0_2(HsInt16 a){
+    S0 * ret = (S0*) malloc(sizeof(S0));
+    ret->tag = 1;
+    ret->val.b.a = a;
+    return ret;
+}
+
+void pokeS0_1(S0* un, HsInt8 a){
+    un->tag = 0;
+    un->val.a.a = a;
+}
+
+void pokeS0_2(S0* un, HsInt16 a){
+    un->tag = 1;
+    un->val.b.a = a;
+}
+
+int checkOffsetsS0_1(HsInt16 *offs){
+    int a = offsetof(S0_1, a) == offs[0];
+    return a;
+}
+
+int checkOffsetsS0_2(HsInt16 *offs){
+    int a = offsetof(S0_2, a) == offs[0];
+    return a;
+}
+
+int checkOffsetsS0(HsInt16 *offs){
+    int t = offsetof(S0, tag) == offs[0];
+    int v = offsetof(S0, val) == offs[1];
+    return t && v;
+}
+
+int checkFieldsS0_1(S0_1* s1, S0_1* s2){
+    int a = s1->a == s2->a;
+    return a;
+}
+
+int checkFieldsS0_2(S0_2* s1, S0_2* s2){
+    int a = s1->a == s2->a;
+    return a;
+}
+
+int checkFieldsS0(S0* s1, S0* s2){
+    if (s1->tag != s2->tag) return 0;
+    if (s1->tag == 0) return checkFieldsS0_1(&s1->val.a,&s2->val.a);
+    if (s1->tag == 1) return checkFieldsS0_2(&s1->val.b,&s2->val.b);
+    return 0;
+}
+
+HsInt16 getSizeS0() {
+    return sizeof(S0);
+}
+
+HsInt16 getAlignmentS0() {
+    return alignof(S0);
+}
+
+typedef struct S1_1{
+    HsInt32 a;
+    HsInt8 b;
+} S1_1;
+
+typedef struct S1_2{
+    HsDouble a;
+    HsInt32 b;
+    HsInt8 c;
+    HsInt8 d;
+} S1_2;
+
+typedef struct S1_3{
+    HsFloat a;
+} S1_3;
+
+typedef union S1_union{
+    S1_1 a;
+    S1_2 b;
+    S1_3 c;
+} S1_union;
+
+typedef struct S1 {
+    HsWord8 tag;
+    S1_union val;
+} S1;
+
+S1 * newS1_1(HsInt32 a, HsInt8 b){
+    S1 * ret = (S1*) malloc(sizeof(S1));
+    ret->tag = 0;
+    ret->val.a.a = a;
+    ret->val.a.b = b;
+    return ret;
+}
+
+S1 * newS1_2(HsDouble a, HsInt32 b, HsInt8 c, HsInt8 d){
+    S1 * ret = (S1*) malloc(sizeof(S1));
+    ret->tag = 1;
+    ret->val.b.a = a;
+    ret->val.b.b = b;
+    ret->val.b.c = c;
+    ret->val.b.d = d;
+    return ret;
+}
+
+S1 * newS1_3(HsFloat a){
+    S1 * ret = (S1*) malloc(sizeof(S1));
+    ret->tag = 2;
+    ret->val.c.a = a;
+    return ret;
+}
+
+void pokeS1_1(S1* un, HsInt32 a, HsInt8 b){
+    un->tag = 0;
+    un->val.a.a = a;
+    un->val.a.b = b;
+}
+
+void pokeS1_2(S1* un, HsDouble a, HsInt32 b, HsInt8 c, HsInt8 d){
+    un->tag = 1;
+    un->val.b.a = a;
+    un->val.b.b = b;
+    un->val.b.c = c;
+    un->val.b.d = d;
+}
+
+void pokeS1_3(S1* un, HsFloat a){
+    un->tag = 2;
+    un->val.c.a = a;
+}
+
+int checkOffsetsS1_1(HsInt16 *offs){
+    int a = offsetof(S1_1, a) == offs[0];
+    int b = offsetof(S1_1, b) == offs[1];
+    return a && b;
+}
+
+int checkOffsetsS1_2(HsInt16 *offs){
+    int a = offsetof(S1_2, a) == offs[0];
+    int b = offsetof(S1_2, b) == offs[1];
+    int c = offsetof(S1_2, c) == offs[2];
+    int d = offsetof(S1_2, d) == offs[3];
+    return a && b && c && d;
+}
+
+int checkOffsetsS1_3(HsInt16 *offs){
+    int a = offsetof(S1_3, a) == offs[0];
+    return a;
+}
+
+int checkOffsetsS1(HsInt16 *offs){
+    int t = offsetof(S1, tag) == offs[0];
+    int v = offsetof(S1, val) == offs[1];
+    return t && v;
+}
+
+int checkFieldsS1_1(S1_1* s1, S1_1* s2){
+    int a = s1->a == s2->a;
+    int b = s1->b == s2->b;
+    return a && b;
+}
+
+int checkFieldsS1_2(S1_2* s1, S1_2* s2){
+    int a = s1->a == s2->a;
+    int b = s1->b == s2->b;
+    int c = s1->c == s2->c;
+    int d = s1->d == s2->d;
+    return a && b && c && d;
+}
+
+int checkFieldsS1_3(S1_3* s1, S1_3* s2){
+    int a = s1->a == s2->a;
+    return a;
+}
+
+int checkFieldsS1(S1* s1, S1* s2){
+    if (s1->tag != s2->tag) return 0;
+    if (s1->tag == 0) return checkFieldsS1_1(&s1->val.a,&s2->val.a);
+    if (s1->tag == 1) return checkFieldsS1_2(&s1->val.b,&s2->val.b);
+    if (s1->tag == 2) return checkFieldsS1_3(&s1->val.c,&s2->val.c);
+    return 0;
+}
+
+HsInt16 getSizeS1() {
+    return sizeof(S1);
+}
+
+HsInt16 getAlignmentS1() {
+    return alignof(S1);
+}
+
+typedef struct S2_1{
+    C13 a;
+    HsInt8 b;
+} S2_1;
+
+typedef struct S2_2{
+    C2 a;
+    C1 b;
+} S2_2;
+
+typedef struct S2_3{
+    C0 a;
+} S2_3;
+
+typedef union S2_union{
+    S2_1 a;
+    S2_2 b;
+    S2_3 c;
+} S2_union;
+
+typedef struct S2 {
+    HsWord8 tag;
+    S2_union val;
+} S2;
+
+S2 * newS2_1(C13* a, HsInt8 b){
+    S2 * ret = (S2*) malloc(sizeof(S2));
+    ret->tag = 0;
+    ret->val.a.a = *a;
+    ret->val.a.b = b;
+    return ret;
+}
+
+S2 * newS2_2(C2* a, C1* b){
+    S2 * ret = (S2*) malloc(sizeof(S2));
+    ret->tag = 1;
+    ret->val.b.a = *a;
+    ret->val.b.b = *b;
+    return ret;
+}
+
+S2 * newS2_3(C0* a){
+    S2 * ret = (S2*) malloc(sizeof(S2));
+    ret->tag = 2;
+    ret->val.c.a = *a;
+    return ret;
+}
+
+void pokeS2_1(S2* un, C13* a, HsInt8 b){
+    un->tag = 0;
+    un->val.a.a = *a;
+    un->val.a.b = b;
+}
+
+void pokeS2_2(S2* un, C2* a, C1* b){
+    un->tag = 1;
+    un->val.b.a = *a;
+    un->val.b.b = *b;
+}
+
+void pokeS2_3(S2* un, C0* a){
+    un->tag = 2;
+    un->val.c.a = *a;
+}
+
+int checkOffsetsS2_1(HsInt16 *offs){
+    int a = offsetof(S2_1, a) == offs[0];
+    int b = offsetof(S2_1, b) == offs[1];
+    return a && b;
+}
+
+int checkOffsetsS2_2(HsInt16 *offs){
+    int a = offsetof(S2_2, a) == offs[0];
+    int b = offsetof(S2_2, b) == offs[1];
+    return a && b;
+}
+
+int checkOffsetsS2_3(HsInt16 *offs){
+    int a = offsetof(S2_3, a) == offs[0];
+    return a;
+}
+
+int checkOffsetsS2(HsInt16 *offs){
+    int t = offsetof(S2, tag) == offs[0];
+    int v = offsetof(S2, val) == offs[1];
+    return t && v;
+}
+
+int checkFieldsS2_1(S2_1* s1, S2_1* s2){
+    int a = checkFieldsC13(&(s1->a),&(s2->a));
+    int b = s1->b == s2->b;
+    return a && b;
+}
+
+int checkFieldsS2_2(S2_2* s1, S2_2* s2){
+    int a = checkFieldsC2(&(s1->a),&(s2->a));
+    int b = checkFieldsC1(&(s1->b),&(s2->b));
+    return a && b;
+}
+
+int checkFieldsS2_3(S2_3* s1, S2_3* s2){
+    int a = checkFieldsC0(&(s1->a),&(s2->a));
+    return a;
+}
+
+int checkFieldsS2(S2* s1, S2* s2){
+    if (s1->tag != s2->tag) return 0;
+    if (s1->tag == 0) return checkFieldsS2_1(&s1->val.a,&s2->val.a);
+    if (s1->tag == 1) return checkFieldsS2_2(&s1->val.b,&s2->val.b);
+    if (s1->tag == 2) return checkFieldsS2_3(&s1->val.c,&s2->val.c);
+    return 0;
+}
+
+HsInt16 getSizeS2() {
+    return sizeof(S2);
+}
+
+HsInt16 getAlignmentS2() {
+    return alignof(S2);
+}
+
+typedef struct S3_1{
+    S1 a;
+} S3_1;
+
+typedef struct S3_2{
+    S2 a;
+} S3_2;
+
+typedef struct S3_3{
+    HsInt8 a;
+} S3_3;
+
+typedef union S3_union{
+    S3_1 a;
+    S3_2 b;
+    S3_3 c;
+} S3_union;
+
+typedef struct S3 {
+    HsWord8 tag;
+    S3_union val;
+} S3;
+
+S3 * newS3_1(S1* a){
+    S3 * ret = (S3*) malloc(sizeof(S3));
+    ret->tag = 0;
+    ret->val.a.a = *a;
+    return ret;
+}
+
+S3 * newS3_2(S2* a){
+    S3 * ret = (S3*) malloc(sizeof(S3));
+    ret->tag = 1;
+    ret->val.b.a = *a;
+    return ret;
+}
+
+S3 * newS3_3(HsInt8 a){
+    S3 * ret = (S3*) malloc(sizeof(S3));
+    ret->tag = 2;
+    ret->val.c.a = a;
+    return ret;
+}
+
+void pokeS3_1(S3* un, S1* a){
+    un->tag = 0;
+    un->val.a.a = *a;
+}
+
+void pokeS3_2(S3* un, S2* a){
+    un->tag = 1;
+    un->val.b.a = *a;
+}
+
+void pokeS3_3(S3* un, HsInt8 a){
+    un->tag = 2;
+    un->val.c.a = a;
+}
+
+int checkOffsetsS3_1(HsInt16 *offs){
+    int a = offsetof(S3_1, a) == offs[0];
+    return a;
+}
+
+int checkOffsetsS3_2(HsInt16 *offs){
+    int a = offsetof(S3_2, a) == offs[0];
+    return a;
+}
+
+int checkOffsetsS3_3(HsInt16 *offs){
+    int a = offsetof(S3_3, a) == offs[0];
+    return a;
+}
+
+int checkOffsetsS3(HsInt16 *offs){
+    int t = offsetof(S3, tag) == offs[0];
+    int v = offsetof(S3, val) == offs[1];
+    return t && v;
+}
+
+int checkFieldsS3_1(S3_1* s1, S3_1* s2){
+    int a = checkFieldsS1(&(s1->a),&(s2->a));
+    return a;
+}
+
+int checkFieldsS3_2(S3_2* s1, S3_2* s2){
+    int a = checkFieldsS2(&(s1->a),&(s2->a));
+    return a;
+}
+
+int checkFieldsS3_3(S3_3* s1, S3_3* s2){
+    int a = s1->a == s2->a;
+    return a;
+}
+
+int checkFieldsS3(S3* s1, S3* s2){
+    if (s1->tag != s2->tag) return 0;
+    if (s1->tag == 0) return checkFieldsS3_1(&s1->val.a,&s2->val.a);
+    if (s1->tag == 1) return checkFieldsS3_2(&s1->val.b,&s2->val.b);
+    if (s1->tag == 2) return checkFieldsS3_3(&s1->val.c,&s2->val.c);
+    return 0;
+}
+
+HsInt16 getSizeS3() {
+    return sizeof(S3);
+}
+
+HsInt16 getAlignmentS3() {
+    return alignof(S3);
+}
+
+typedef struct S4_1{
+    C0 a;
+} S4_1;
+
+typedef struct S4_2{
+    C0 a;
+} S4_2;
+
+typedef struct S4_3{
+    C0 a;
+} S4_3;
+
+typedef struct S4_4{
+    C1 a;
+} S4_4;
+
+typedef union S4_union{
+    S4_1 a;
+    S4_2 b;
+    S4_3 c;
+    S4_4 d;
+} S4_union;
+
+typedef struct S4 {
+    HsWord8 tag;
+    S4_union val;
+} S4;
+
+S4 * newS4_1(C0* a){
+    S4 * ret = (S4*) malloc(sizeof(S4));
+    ret->tag = 0;
+    ret->val.a.a = *a;
+    return ret;
+}
+
+S4 * newS4_2(C0* a){
+    S4 * ret = (S4*) malloc(sizeof(S4));
+    ret->tag = 1;
+    ret->val.b.a = *a;
+    return ret;
+}
+
+S4 * newS4_3(C0* a){
+    S4 * ret = (S4*) malloc(sizeof(S4));
+    ret->tag = 2;
+    ret->val.c.a = *a;
+    return ret;
+}
+
+S4 * newS4_4(C1* a){
+    S4 * ret = (S4*) malloc(sizeof(S4));
+    ret->tag = 3;
+    ret->val.d.a = *a;
+    return ret;
+}
+
+void pokeS4_1(S4* un, C0* a){
+    un->tag = 0;
+    un->val.a.a = *a;
+}
+
+void pokeS4_2(S4* un, C0* a){
+    un->tag = 1;
+    un->val.b.a = *a;
+}
+
+void pokeS4_3(S4* un, C0* a){
+    un->tag = 2;
+    un->val.c.a = *a;
+}
+
+void pokeS4_4(S4* un, C1* a){
+    un->tag = 3;
+    un->val.d.a = *a;
+}
+
+int checkOffsetsS4_1(HsInt16 *offs){
+    int a = offsetof(S4_1, a) == offs[0];
+    return a;
+}
+
+int checkOffsetsS4_2(HsInt16 *offs){
+    int a = offsetof(S4_2, a) == offs[0];
+    return a;
+}
+
+int checkOffsetsS4_3(HsInt16 *offs){
+    int a = offsetof(S4_3, a) == offs[0];
+    return a;
+}
+
+int checkOffsetsS4_4(HsInt16 *offs){
+    int a = offsetof(S4_4, a) == offs[0];
+    return a;
+}
+
+int checkOffsetsS4(HsInt16 *offs){
+    int t = offsetof(S4, tag) == offs[0];
+    int v = offsetof(S4, val) == offs[1];
+    return t && v;
+}
+
+int checkFieldsS4_1(S4_1* s1, S4_1* s2){
+    int a = checkFieldsC0(&(s1->a),&(s2->a));
+    return a;
+}
+
+int checkFieldsS4_2(S4_2* s1, S4_2* s2){
+    int a = checkFieldsC0(&(s1->a),&(s2->a));
+    return a;
+}
+
+int checkFieldsS4_3(S4_3* s1, S4_3* s2){
+    int a = checkFieldsC0(&(s1->a),&(s2->a));
+    return a;
+}
+
+int checkFieldsS4_4(S4_4* s1, S4_4* s2){
+    int a = checkFieldsC1(&(s1->a),&(s2->a));
+    return a;
+}
+
+int checkFieldsS4(S4* s1, S4* s2){
+    if (s1->tag != s2->tag) return 0;
+    if (s1->tag == 0) return checkFieldsS4_1(&s1->val.a,&s2->val.a);
+    if (s1->tag == 1) return checkFieldsS4_2(&s1->val.b,&s2->val.b);
+    if (s1->tag == 2) return checkFieldsS4_3(&s1->val.c,&s2->val.c);
+    if (s1->tag == 3) return checkFieldsS4_4(&s1->val.d,&s2->val.d);
+    return 0;
+}
+
+HsInt16 getSizeS4() {
+    return sizeof(S4);
+}
+
+HsInt16 getAlignmentS4() {
+    return alignof(S4);
+}
+
