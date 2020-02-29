@@ -4,10 +4,27 @@
 
 The `derive-storable` package allows you to automatically generate Storable instances for your datatypes. It uses GHC.Generics, which allows the coders to derive certain instances automatically. To derive a (G)Storable instance, the data-type has to:
 
-* have only one constructor.
+* ~~have only one constructor~~ There is now a `sumtypes` option for data-types with multiple constructors. See **Sum types** section for more.
 * all fields of the constructor need to be GStorable.
 * implement a Generic instance (`derive (Generic)`)
 
+### Sum types
+
+To enable support for sum types, add a `-f sumtypes` option to `cabal new-build` or `cabal new-configure`. The library discerns between sum and non-sum types. Non-sum types have the same memory layout as C structs, while sum types correspond to tagged unions: 
+
+```c
+struct datatype {
+    unsigned char tag;
+    union { 
+        constructor1 a;
+        constructor2 b;
+        ...
+    } val;
+};
+
+```
+
+Note - while it is possible to have an instance for a self/mutually recursive data-type, using methods for the data-type will result in infinite loop. So there is no support for recursion in data-types.
 
 ### Note on performance
 

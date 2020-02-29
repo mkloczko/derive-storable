@@ -1,13 +1,19 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE CApiFFI #-}
+{-# LANGUAGE CPP     #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module TestCases where
 
-import GHC.Generics (Generic, Rep, from)
+import GHC.Generics hiding (C1,S1)
+import GHC.TypeLits 
 import Foreign.C.Types
 import Foreign.Storable
 import Foreign.Storable.Generic
@@ -47,10 +53,36 @@ newStorable val = do
   poke ptr val
   return ptr
 
-goffsets :: (GStorable' (Rep a), GStorable a, Generic a) => a -> [Int16]
-goffsets v = map fromIntegral $ internalOffsets (from v)
 
-data C0 = C0 
+class SumOffsets' f where
+    sumOffsets' :: f p -> [Offset]
+
+instance (SumOffsets' f) => SumOffsets' (M1 D t f) where
+    sumOffsets' (M1 v) = sumOffsets' v
+
+instance (GStorable' f, SumOffsets' f) => SumOffsets' (M1 C t f) where
+    sumOffsets' (M1 v) = internalOffsets v
+
+instance (SumOffsets' f, SumOffsets' g) => SumOffsets' (f :+: g) where
+    sumOffsets' (L1 v) = sumOffsets' v
+    sumOffsets' (R1 v) = sumOffsets' v
+
+instance SumOffsets' (M1 S t f) where
+    sumOffsets' _ = undefined
+instance SumOffsets' (f :*: g) where
+    sumOffsets' _ = undefined
+instance SumOffsets' (K1 i a) where
+    sumOffsets' _ = undefined
+instance SumOffsets' (U1) where
+    sumOffsets' _ = undefined
+instance SumOffsets' (V1) where
+    sumOffsets' _ = undefined
+
+
+goffsets :: (SumOffsets' (Rep a), GStorable a, Generic a) => a -> [Int16]
+goffsets v = map fromIntegral $ sumOffsets' (from v)
+
+data C0 = C0
     deriving (Show, Eq, Generic, GStorable)
 
 instance Checkable C0 where
@@ -549,3 +581,215 @@ foreign import ccall checkOffsetsC20 :: Ptr Int16 -> IO Int8
 foreign import ccall getSizeC20 :: IO Int16
 foreign import ccall getAlignmentC20 :: IO Int16
 
+#ifdef GSTORABLE_SUMTYPES
+data S0 = S0_1 Int8
+        | S0_2 Int16
+    deriving (Show, Eq, Generic, GStorable)
+
+instance Checkable S0 where
+    checkFields    ptr1 ptr2 = (==1) <$> checkFieldsS0 ptr1 ptr2
+    checkOffsets (S0_1 a) offs = (==1) <$> checkOffsetsS0_1 offs
+    checkOffsets (S0_2 a) offs = (==1) <$> checkOffsetsS0_2 offs
+    getSize        a          = fromIntegral <$> getSizeS0
+    getAlignment   a          = fromIntegral <$> getAlignmentS0
+    new (S0_1 a) = do
+        ptr <- newS0_1 a
+        return ptr
+    new (S0_2 a) = do
+        ptr <- newS0_2 a
+        return ptr
+
+instance Arbitrary S0 where 
+    arbitrary = oneof [ S0_1 <$> arbitrary
+                      , S0_2 <$> arbitrary
+                      ]
+foreign import ccall newS0_1 :: Int8 -> IO (Ptr S0)
+foreign import ccall newS0_2 :: Int16 -> IO (Ptr S0)
+foreign import ccall checkFieldsS0 :: Ptr S0 -> Ptr S0 -> IO Int8
+foreign import ccall checkOffsetsS0 :: Ptr Int16 -> IO Int8
+foreign import ccall checkOffsetsS0_1 :: Ptr Int16 -> IO Int8
+foreign import ccall checkOffsetsS0_2 :: Ptr Int16 -> IO Int8
+foreign import ccall getSizeS0 :: IO Int16
+foreign import ccall getAlignmentS0 :: IO Int16
+
+data S1 = S1_1 Int32 Int8
+        | S1_2 Double Int32 Int8 Int8
+        | S1_3 Float
+    deriving (Show, Eq, Generic, GStorable)
+
+instance Checkable S1 where
+    checkFields    ptr1 ptr2 = (==1) <$> checkFieldsS1 ptr1 ptr2
+    checkOffsets (S1_1 a b) offs = (==1) <$> checkOffsetsS1_1 offs
+    checkOffsets (S1_2 a b c d) offs = (==1) <$> checkOffsetsS1_2 offs
+    checkOffsets (S1_3 a) offs = (==1) <$> checkOffsetsS1_3 offs
+    getSize        a          = fromIntegral <$> getSizeS1
+    getAlignment   a          = fromIntegral <$> getAlignmentS1
+    new (S1_1 a b) = do
+        ptr <- newS1_1 a b
+        return ptr
+    new (S1_2 a b c d) = do
+        ptr <- newS1_2 a b c d
+        return ptr
+    new (S1_3 a) = do
+        ptr <- newS1_3 a
+        return ptr
+
+instance Arbitrary S1 where 
+    arbitrary = oneof [ S1_1 <$> arbitrary <*> arbitrary
+                      , S1_2 <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+                      , S1_3 <$> arbitrary
+                      ]
+foreign import ccall newS1_1 :: Int32 -> Int8 -> IO (Ptr S1)
+foreign import ccall newS1_2 :: Double -> Int32 -> Int8 -> Int8 -> IO (Ptr S1)
+foreign import ccall newS1_3 :: Float -> IO (Ptr S1)
+foreign import ccall checkFieldsS1 :: Ptr S1 -> Ptr S1 -> IO Int8
+foreign import ccall checkOffsetsS1 :: Ptr Int16 -> IO Int8
+foreign import ccall checkOffsetsS1_1 :: Ptr Int16 -> IO Int8
+foreign import ccall checkOffsetsS1_2 :: Ptr Int16 -> IO Int8
+foreign import ccall checkOffsetsS1_3 :: Ptr Int16 -> IO Int8
+foreign import ccall getSizeS1 :: IO Int16
+foreign import ccall getAlignmentS1 :: IO Int16
+
+data S2 = S2_1 C13 Int8
+        | S2_2 C2 C1
+        | S2_3 C0
+    deriving (Show, Eq, Generic, GStorable)
+
+instance Checkable S2 where
+    checkFields    ptr1 ptr2 = (==1) <$> checkFieldsS2 ptr1 ptr2
+    checkOffsets (S2_1 a b) offs = (==1) <$> checkOffsetsS2_1 offs
+    checkOffsets (S2_2 a b) offs = (==1) <$> checkOffsetsS2_2 offs
+    checkOffsets (S2_3 a) offs = (==1) <$> checkOffsetsS2_3 offs
+    getSize        a          = fromIntegral <$> getSizeS2
+    getAlignment   a          = fromIntegral <$> getAlignmentS2
+    new (S2_1 a b) = do
+        ptr_a <- newStorable a
+        ptr <- newS2_1 ptr_a b
+        free ptr_a
+        return ptr
+    new (S2_2 a b) = do
+        ptr_a <- newStorable a
+        ptr_b <- newStorable b
+        ptr <- newS2_2 ptr_a ptr_b
+        free ptr_a
+        free ptr_b
+        return ptr
+    new (S2_3 a) = do
+        ptr_a <- newStorable a
+        ptr <- newS2_3 ptr_a
+        free ptr_a
+        return ptr
+
+instance Arbitrary S2 where 
+    arbitrary = oneof [ S2_1 <$> arbitrary <*> arbitrary
+                      , S2_2 <$> arbitrary <*> arbitrary
+                      , S2_3 <$> arbitrary
+                      ]
+foreign import ccall newS2_1 :: Ptr C13 -> Int8 -> IO (Ptr S2)
+foreign import ccall newS2_2 :: Ptr C2 -> Ptr C1 -> IO (Ptr S2)
+foreign import ccall newS2_3 :: Ptr C0 -> IO (Ptr S2)
+foreign import ccall checkFieldsS2 :: Ptr S2 -> Ptr S2 -> IO Int8
+foreign import ccall checkOffsetsS2 :: Ptr Int16 -> IO Int8
+foreign import ccall checkOffsetsS2_1 :: Ptr Int16 -> IO Int8
+foreign import ccall checkOffsetsS2_2 :: Ptr Int16 -> IO Int8
+foreign import ccall checkOffsetsS2_3 :: Ptr Int16 -> IO Int8
+foreign import ccall getSizeS2 :: IO Int16
+foreign import ccall getAlignmentS2 :: IO Int16
+
+data S3 = S3_1 S1
+        | S3_2 S2
+        | S3_3 Int8
+    deriving (Show, Eq, Generic, GStorable)
+
+instance Checkable S3 where
+    checkFields    ptr1 ptr2 = (==1) <$> checkFieldsS3 ptr1 ptr2
+    checkOffsets (S3_1 a) offs = (==1) <$> checkOffsetsS3_1 offs
+    checkOffsets (S3_2 a) offs = (==1) <$> checkOffsetsS3_2 offs
+    checkOffsets (S3_3 a) offs = (==1) <$> checkOffsetsS3_3 offs
+    getSize        a          = fromIntegral <$> getSizeS3
+    getAlignment   a          = fromIntegral <$> getAlignmentS3
+    new (S3_1 a) = do
+        ptr_a <- newStorable a
+        ptr <- newS3_1 ptr_a
+        free ptr_a
+        return ptr
+    new (S3_2 a) = do
+        ptr_a <- newStorable a
+        ptr <- newS3_2 ptr_a
+        free ptr_a
+        return ptr
+    new (S3_3 a) = do
+        ptr <- newS3_3 a
+        return ptr
+
+instance Arbitrary S3 where 
+    arbitrary = oneof [ S3_1 <$> arbitrary
+                      , S3_2 <$> arbitrary
+                      , S3_3 <$> arbitrary
+                      ]
+foreign import ccall newS3_1 :: Ptr S1 -> IO (Ptr S3)
+foreign import ccall newS3_2 :: Ptr S2 -> IO (Ptr S3)
+foreign import ccall newS3_3 :: Int8 -> IO (Ptr S3)
+foreign import ccall checkFieldsS3 :: Ptr S3 -> Ptr S3 -> IO Int8
+foreign import ccall checkOffsetsS3 :: Ptr Int16 -> IO Int8
+foreign import ccall checkOffsetsS3_1 :: Ptr Int16 -> IO Int8
+foreign import ccall checkOffsetsS3_2 :: Ptr Int16 -> IO Int8
+foreign import ccall checkOffsetsS3_3 :: Ptr Int16 -> IO Int8
+foreign import ccall getSizeS3 :: IO Int16
+foreign import ccall getAlignmentS3 :: IO Int16
+
+data S4 = S4_1 C0
+        | S4_2 C0
+        | S4_3 C0
+        | S4_4 C1
+    deriving (Show, Eq, Generic, GStorable)
+
+instance Checkable S4 where
+    checkFields    ptr1 ptr2 = (==1) <$> checkFieldsS4 ptr1 ptr2
+    checkOffsets (S4_1 a) offs = (==1) <$> checkOffsetsS4_1 offs
+    checkOffsets (S4_2 a) offs = (==1) <$> checkOffsetsS4_2 offs
+    checkOffsets (S4_3 a) offs = (==1) <$> checkOffsetsS4_3 offs
+    checkOffsets (S4_4 a) offs = (==1) <$> checkOffsetsS4_4 offs
+    getSize        a          = fromIntegral <$> getSizeS4
+    getAlignment   a          = fromIntegral <$> getAlignmentS4
+    new (S4_1 a) = do
+        ptr_a <- newStorable a
+        ptr <- newS4_1 ptr_a
+        free ptr_a
+        return ptr
+    new (S4_2 a) = do
+        ptr_a <- newStorable a
+        ptr <- newS4_2 ptr_a
+        free ptr_a
+        return ptr
+    new (S4_3 a) = do
+        ptr_a <- newStorable a
+        ptr <- newS4_3 ptr_a
+        free ptr_a
+        return ptr
+    new (S4_4 a) = do
+        ptr_a <- newStorable a
+        ptr <- newS4_4 ptr_a
+        free ptr_a
+        return ptr
+
+instance Arbitrary S4 where 
+    arbitrary = oneof [ S4_1 <$> arbitrary
+                      , S4_2 <$> arbitrary
+                      , S4_3 <$> arbitrary
+                      , S4_4 <$> arbitrary
+                      ]
+foreign import ccall newS4_1 :: Ptr C0 -> IO (Ptr S4)
+foreign import ccall newS4_2 :: Ptr C0 -> IO (Ptr S4)
+foreign import ccall newS4_3 :: Ptr C0 -> IO (Ptr S4)
+foreign import ccall newS4_4 :: Ptr C1 -> IO (Ptr S4)
+foreign import ccall checkFieldsS4 :: Ptr S4 -> Ptr S4 -> IO Int8
+foreign import ccall checkOffsetsS4 :: Ptr Int16 -> IO Int8
+foreign import ccall checkOffsetsS4_1 :: Ptr Int16 -> IO Int8
+foreign import ccall checkOffsetsS4_2 :: Ptr Int16 -> IO Int8
+foreign import ccall checkOffsetsS4_3 :: Ptr Int16 -> IO Int8
+foreign import ccall checkOffsetsS4_4 :: Ptr Int16 -> IO Int8
+foreign import ccall getSizeS4 :: IO Int16
+foreign import ccall getAlignmentS4 :: IO Int16
+
+#endif
