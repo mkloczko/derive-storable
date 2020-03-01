@@ -33,10 +33,8 @@ matrix:
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.6.4","cabal-install-2.4"]}}
     - compiler: ghc-8.4.2
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.4.2","cabal-install-2.4"]}}
-    - compiler: ghc-8.4.1
-      addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.4.1","cabal-install-2.4"]}}
-    - compiler: ghc-8.2.1
-      addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.2.1","cabal-install-2.4"]}}
+    - compiler: ghc-8.2.2
+      addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.2.2","cabal-install-2.4"]}}
     - compiler: ghc-8.0.2
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.0.2","cabal-install-2.4"]}}
     - compiler: ghc-8.0.1
@@ -112,7 +110,7 @@ install:
   - "cat cabal.project.freeze | sed -E 's/^(constraints: *| *)//' | sed 's/any.//'"
   - rm  cabal.project.freeze
   - ${CABAL} v2-build $WITHCOMPILER ${TEST} ${BENCH} --dep -j2 all | color_cabal_output
-  - ${CABAL} v2-build $WITHCOMPILER ${TEST} ${BENCH} -f sumtypes --dep -j2 all | color_cabal_output
+  - ${CABAL} v2-build $WITHCOMPILER ${TEST} ${BENCH} --dep -j2 all | color_cabal_output
   - ${CABAL} v2-build $WITHCOMPILER --disable-tests --disable-benchmarks --dep -j2 all | color_cabal_output
 script:
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
@@ -141,6 +139,10 @@ script:
   - ${CABAL} v2-build $WITHCOMPILER ${TEST} ${BENCH} all | color_cabal_output
   # Testing...
   - ${CABAL} v2-test $WITHCOMPILER ${TEST} ${BENCH} all | color_cabal_output
+  # Building and testing with sumtypes 
+  - ${CABAL} v2-build $WITHCOMPILER ${TEST} ${BENCH} -f sumtypes all | color_cabal_output
+  # Testing...
+  - ${CABAL} v2-test $WITHCOMPILER ${TEST} ${BENCH} -f sumtypes all | color_cabal_output
   # cabal check...
   - (cd ${PKGDIR_derive_storable} && ${CABAL} -vnormal check)
   # haddock...
