@@ -6,6 +6,7 @@
 {-#LANGUAGE ScopedTypeVariables #-} 
 {-#LANGUAGE InstanceSigs #-}
 {-#LANGUAGE PartialTypeSignatures #-}
+{-#LANGUAGE UndecidableInstances  #-}
 
 {-#LANGUAGE DataKinds #-}
 module GenericType (
@@ -23,6 +24,7 @@ import Foreign.Storable.Generic.Internal
 
 -- Test data
 import Foreign.Storable.Generic.Tools
+import Foreign.Storable.Generic.Tools.TypeFuns
 import Foreign.Storable.Generic.Instances
 import Foreign.Ptr (Ptr, nullPtr, plusPtr)
 import Foreign.C.Types
@@ -129,7 +131,7 @@ data MyPhantom
 -- The Show constraint is used so we can print out the badly working cases.
 -- The Eq and Arbitrary one are for generating different values for the same types.
 data GenericType where
-   GenericType  :: (p ~ MyPhantom, Eq (f p), Arbitrary (f p), GStorable' f, Show (f p)) => f p -> GenericType
+   GenericType  :: (p ~ MyPhantom, Eq (f p), Arbitrary (f p),KnownNat (NoFields f),  GStorable' f, Show (f p)) => f p -> GenericType
 
 instance Arbitrary GenericType where
     arbitrary = do
@@ -224,14 +226,13 @@ toGenericType [v] = v
 toGenericType types = foldl1 typeProduct types
 
 -- | Simulates the K1 step for generic representations. 
-instance {-#OVERLAPS#-} (GStorable' f) => GStorable' (K1 i (f p)) where
+instance {-#OVERLAPS#-} (KnownNat (NoFields f), GStorable' f) => GStorable' (K1 i (f p)) where
     glistSizeOf'    _ = [internalSizeOf (undefined :: f p)]
     glistAlignment' _ = [internalAlignment (undefined :: f p)]
     gpeekByteOff' offs n ptr off   = K1 <$> internalPeekByteOff ptr (off + f_off)
         where f_off = offs !! n
     gpokeByteOff' offs n ptr off (K1 v) = internalPokeByteOff ptr (off + f_off) v
         where f_off = offs !! n
-    gnumberOf'      _  = 1
 
 -- | Helps with avoiding NaN problem. 
 ok_vector :: Int -> Gen [Word8]
