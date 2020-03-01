@@ -39,7 +39,6 @@ module Foreign.Storable.Generic.Internal (
   ) where
 
 import GHC.TypeLits
-import GHC.TypeNats
 import GHC.Generics
 import Foreign.Ptr
 import Foreign.Storable
