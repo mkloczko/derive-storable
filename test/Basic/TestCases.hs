@@ -1,5 +1,6 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE CApiFFI #-}
+{-# LANGUAGE CPP     #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -76,6 +77,7 @@ instance SumOffsets' (U1) where
     sumOffsets' _ = undefined
 instance SumOffsets' (V1) where
     sumOffsets' _ = undefined
+
 
 goffsets :: (SumOffsets' (Rep a), GStorable a, Generic a) => a -> [Int16]
 goffsets v = map fromIntegral $ sumOffsets' (from v)
@@ -579,6 +581,7 @@ foreign import ccall checkOffsetsC20 :: Ptr Int16 -> IO Int8
 foreign import ccall getSizeC20 :: IO Int16
 foreign import ccall getAlignmentC20 :: IO Int16
 
+#ifdef GSTORABLE_SUMTYPES
 data S0 = S0_1 Int8
         | S0_2 Int16
     deriving (Show, Eq, Generic, GStorable)
@@ -789,3 +792,4 @@ foreign import ccall checkOffsetsS4_4 :: Ptr Int16 -> IO Int8
 foreign import ccall getSizeS4 :: IO Int16
 foreign import ccall getAlignmentS4 :: IO Int16
 
+#endif

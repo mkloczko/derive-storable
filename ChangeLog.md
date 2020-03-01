@@ -1,5 +1,9 @@
 # Revision history for derive-storable
 
+## 0.2.0.0  -- 2020-03-01
+
+* Added support for sum types enabled through additional option.
+
 ## 0.1.2.0  -- 2018-04-30
 
 * Added U1 instance for GHC.Generics.

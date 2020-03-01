@@ -1,5 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE FlexibleContexts#-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE CPP                 #-}
 module Main where
 
 
@@ -50,11 +51,6 @@ main = hspec $ do
         it "C18" $ property $ (same_size      :: C18 -> Expectation)
         it "C19" $ property $ (same_size      :: C19 -> Expectation)
         it "C20" $ property $ (same_size      :: C20 -> Expectation)
-        it "S0" $ property $ (same_size      :: S0 -> Expectation)
-        it "S1" $ property $ (same_size      :: S1 -> Expectation)
-        it "S2" $ property $ (same_size      :: S2 -> Expectation)
-        it "S3" $ property $ (same_size      :: S3 -> Expectation)
-        it "S4" $ property $ (same_size      :: S4 -> Expectation)
     describe "Test for same alignment" $ do
         it "C0" $ property $ (same_alignment :: C0 -> Expectation)
         it "C1" $ property $ (same_alignment :: C1 -> Expectation)
@@ -77,11 +73,6 @@ main = hspec $ do
         it "C18" $ property $ (same_alignment :: C18 -> Expectation)
         it "C19" $ property $ (same_alignment :: C19 -> Expectation)
         it "C20" $ property $ (same_alignment :: C20 -> Expectation)
-        it "S0" $ property $ (same_alignment :: S0 -> Expectation)
-        it "S1" $ property $ (same_alignment :: S1 -> Expectation)
-        it "S2" $ property $ (same_alignment :: S2 -> Expectation)
-        it "S3" $ property $ (same_alignment :: S3 -> Expectation)
-        it "S4" $ property $ (same_alignment :: S4 -> Expectation)
     describe "Test for same offsets" $ do
         it "C0" $ property $ (same_offsets   :: C0 -> Expectation)
         it "C1" $ property $ (same_offsets   :: C1 -> Expectation)
@@ -104,11 +95,6 @@ main = hspec $ do
         it "C18" $ property $ (same_offsets   :: C18 -> Expectation)
         it "C19" $ property $ (same_offsets   :: C19 -> Expectation)
         it "C20" $ property $ (same_offsets   :: C20 -> Expectation)
-        it "S0" $ property $ (same_offsets   :: S0 -> Expectation)
-        it "S1" $ property $ (same_offsets   :: S1 -> Expectation)
-        it "S2" $ property $ (same_offsets   :: S2 -> Expectation)
-        it "S3" $ property $ (same_offsets   :: S3 -> Expectation)
-        it "S4" $ property $ (same_offsets   :: S4 -> Expectation)
     describe "Test for same fields" $ do
         it "C0" $ property $ (same_fields    :: C0 -> Expectation)
         it "C1" $ property $ (same_fields    :: C1 -> Expectation)
@@ -131,8 +117,29 @@ main = hspec $ do
         it "C18" $ property $ (same_fields    :: C18 -> Expectation)
         it "C19" $ property $ (same_fields    :: C19 -> Expectation)
         it "C20" $ property $ (same_fields    :: C20 -> Expectation)
+#ifdef GSTORABLE_SUMTYPES
+    describe "Test for same size - sums" $ do
+        it "S0" $ property $ (same_size      :: S0 -> Expectation)
+        it "S1" $ property $ (same_size      :: S1 -> Expectation)
+        it "S2" $ property $ (same_size      :: S2 -> Expectation)
+        it "S3" $ property $ (same_size      :: S3 -> Expectation)
+        it "S4" $ property $ (same_size      :: S4 -> Expectation)
+    describe "Test for same alignment - sums" $ do
+        it "S0" $ property $ (same_alignment :: S0 -> Expectation)
+        it "S1" $ property $ (same_alignment :: S1 -> Expectation)
+        it "S2" $ property $ (same_alignment :: S2 -> Expectation)
+        it "S3" $ property $ (same_alignment :: S3 -> Expectation)
+        it "S4" $ property $ (same_alignment :: S4 -> Expectation)
+    describe "Test for same offsets - sums" $ do
+        it "S0" $ property $ (same_offsets   :: S0 -> Expectation)
+        it "S1" $ property $ (same_offsets   :: S1 -> Expectation)
+        it "S2" $ property $ (same_offsets   :: S2 -> Expectation)
+        it "S3" $ property $ (same_offsets   :: S3 -> Expectation)
+        it "S4" $ property $ (same_offsets   :: S4 -> Expectation)
+    describe "Test for same fields - sums" $ do
         it "S0" $ property $ (same_fields    :: S0 -> Expectation)
         it "S1" $ property $ (same_fields    :: S1 -> Expectation)
         it "S2" $ property $ (same_fields    :: S2 -> Expectation)
         it "S3" $ property $ (same_fields    :: S3 -> Expectation)
         it "S4" $ property $ (same_fields    :: S4 -> Expectation)
+#endif

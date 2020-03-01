@@ -17,16 +17,20 @@ Portability : portable
 {-#LANGUAGE UndecidableInstances #-}
 {-#LANGUAGE DataKinds            #-}
 
-{-#LANGUAGE TypeApplications     #-}
 {-#LANGUAGE TypeFamilies         #-}
-{-#LANGUAGE KindSignatures       #-}
 {-#LANGUAGE MultiParamTypeClasses#-}
-{-#LANGUAGE AllowAmbiguousTypes  #-}
 {-#LANGUAGE ConstraintKinds      #-}
+{-#LANGUAGE CPP                  #-}
 
 module Foreign.Storable.Generic.Internal (
      GStorable'(..),
      GStorable (..),
+#ifdef GSTORABLE_SUMTYPES
+     GStorableSum'(..),
+     GStorableChoice'(..),
+     GStorableChoice,
+     internalTagValue,
+#endif
      internalSizeOf,
      internalAlignment,
      internalPeekByteOff,
@@ -42,6 +46,7 @@ import Foreign.Storable
 import Foreign.Marshal.Alloc
 import Foreign.C.Types
 
+import Data.Proxy
 import Data.Word
 import Data.Int
 
@@ -143,6 +148,16 @@ instance (GStorable a) => GStorable' (K1 i a) where
     glistAlignment' _ = [galignment (undefined :: a)]  
 
 
+#ifndef GSTORABLE_SUMTYPES
+type SumTypesDisabled = Text "By default sum types are not supported by GStorable instances." :$$: Text "You can pass a 'sumtypes' flag through 'cabal new-configure' to enable them." :$$: Text "In case of trouble, one can use '-DGSTORABLE_SUMTYPES' ghc flag instead." 
+
+instance (TypeError SumTypesDisabled) => GStorable' (f :+: g) where
+    gpeekByteOff'   = undefined
+    gpokeByteOff'   = undefined
+    glistSizeOf'    = undefined
+    glistAlignment' = undefined
+#endif
+
 -- These functions were moved outside GStorable type class.
 -- They take generic representations as input.
 
@@ -195,88 +210,113 @@ internalOffsets _ = calcOffsets $ zip sizes aligns
 
 -- | The class uses the default Generic based implementations to 
 -- provide Storable instances for types made from primitive types.
--- Does not work on Algebraic Data Types with more than one constructor.
+-- Sum types work with 'sumtypes' cabal flag enabled - or 
+-- just with -DGSTORABLE_SUMTYPES cpp flag.
 class GStorable a where
+    {-# INLINE gsizeOf      #-}
+    {-# INLINE galignment   #-}
+    {-# INLINE gpeekByteOff #-}
+    {-# INLINE gpokeByteOff #-}
     -- | Calculate the size of the type.
-    {-# INLINE gsizeOf #-}
     gsizeOf :: a   -- ^ Element of a given type. Can be undefined.
             -> Int -- ^ Size.
-    default gsizeOf :: (ConstraintsSize a, GStorableChoice a)
-                    => a -> Int
-    -- gsizeOf _ = internalSizeOf (undefined :: Rep a p) 
-    gsizeOf _ = chSizeOf @(IsSumType (Rep a)) (undefined :: a) -- internalSizeOf (undefined :: Rep a p) 
     
     -- | Calculate the alignment of the type.
---     {-# INLINE galignment #-}
     galignment :: a   -- ^ Element of a given type. Can be undefined  
                -> Int -- ^ Alignment.
-    default galignment :: (ConstraintsAlignment a, GStorableChoice a)
-                         => a -> Int
-    galignment _ = chAlignment @(IsSumType (Rep a) ) (undefined :: a) 
---     default galignment :: (Generic a, GStorable' (Rep a))
---                          => a -> Int
---     galignment _ = internalAlignment (undefined :: Rep a p) 
-
+    
     -- | Read the variable from a given pointer.
     gpeekByteOff :: Ptr b -- ^ Pointer to the variable
                  -> Int   -- ^ Offset
                  -> IO a  -- ^ Returned variable.
-    default gpeekByteOff :: (GStorableChoice a, ConstraintsPeek a)
-                         => Ptr b -> Int -> IO a
-    gpeekByteOff = chPeekByteOff @(IsSumType (Rep a))
---     default gpeekByteOff :: ( KnownNat (NoFields (Rep a))
---                             , Generic a, GStorable' (Rep a))
---                          => Ptr b -> Int -> IO a
---     {-# INLINE gpeekByteOff #-}
---     gpeekByteOff ptr offset = to <$> internalPeekByteOff ptr offset
-
+    
     -- | Write the variable to a pointer. 
     gpokeByteOff :: Ptr b -- ^ Pointer to the variable. 
                  -> Int   -- ^ Offset.
                  -> a     -- ^ The variable
                  -> IO ()
+
+#ifdef GSTORABLE_SUMTYPES
+    default gsizeOf :: (ConstraintsSize a, GStorableChoice a)
+                    => a -> Int
+    -- gsizeOf _ = chSizeOf @(IsSumType (Rep a)) (undefined :: a)
+    gsizeOf = chSizeOf (Proxy :: Proxy (IsSumType (Rep a)))
+    
+    default galignment :: (ConstraintsAlignment a, GStorableChoice a)
+                         => a -> Int
+    galignment = chAlignment (Proxy :: Proxy (IsSumType (Rep a)))
+
+    default gpeekByteOff :: (GStorableChoice a, ConstraintsPeek a)
+                         => Ptr b -> Int -> IO a
+    gpeekByteOff = chPeekByteOff (Proxy :: Proxy (IsSumType (Rep a)))
+
     default gpokeByteOff :: (GStorableChoice a, ConstraintsPoke a)
                          => Ptr b -> Int -> a -> IO ()
-    {-# INLINE gpokeByteOff #-}
-    gpokeByteOff = chPokeByteOff @(IsSumType (Rep a))
---     default gpokeByteOff :: ( KnownNat (NoFields (Rep a))
---                             , Generic a, GStorable' (Rep a))
---                          => Ptr b -> Int -> a -> IO ()
---     {-# INLINE gpokeByteOff #-}
---     gpokeByteOff ptr offset x = internalPokeByteOff ptr offset (from x)
+    gpokeByteOff = chPokeByteOff (Proxy :: Proxy (IsSumType (Rep a)))
+
+#else
+    default gsizeOf :: (Generic a, GStorable' (Rep a))
+                    => a -> Int
+    gsizeOf _ = internalSizeOf (undefined :: Rep a p) 
+    default galignment :: (Generic a, GStorable' (Rep a))
+                         => a -> Int
+    galignment _ = internalAlignment (undefined :: Rep a p) 
+    default gpeekByteOff :: ( KnownNat (NoFields (Rep a))
+                            , Generic a, GStorable' (Rep a))
+                         => Ptr b -> Int -> IO a
+    gpeekByteOff ptr offset = to <$> internalPeekByteOff ptr offset
+    default gpokeByteOff :: ( KnownNat (NoFields (Rep a))
+                            , Generic a, GStorable' (Rep a))
+                         => Ptr b -> Int -> a -> IO ()
+    gpokeByteOff ptr offset x = internalPokeByteOff ptr offset (from x)
+#endif
 
 
+#ifdef GSTORABLE_SUMTYPES
 type GStorableChoice a = GStorableChoice' (IsSumType (Rep a)) a
 
+-- | Choose a GStorable implementation - whether a sum type (with tag) or
+-- raw product type (without the tag).
 class GStorableChoice' (choice :: Bool) a where
-    chSizeOf      :: a     -> Int
-    chAlignment   :: a     -> Int
-    chPeekByteOff :: Ptr b -> Int -> IO a
-    chPokeByteOff :: Ptr b -> Int ->    a -> IO ()
+    chSizeOf      :: proxy choice -> a     -> Int
+    chAlignment   :: proxy choice -> a     -> Int
+    chPeekByteOff :: proxy choice -> Ptr b -> Int -> IO a
+    chPokeByteOff :: proxy choice -> Ptr b -> Int ->    a -> IO ()
 
+-- | Implementation for the sum types.
 instance ( Generic a, KnownNat (SumArity (Rep a))
          , GStorableSum' (Rep a), IsSumType (Rep a) ~ True) => GStorableChoice' True a where
-    chSizeOf    _ = calcSize $ zip sizes aligns
+    {-# INLINE chSizeOf #-}
+    {-# INLINE chPeekByteOff #-}
+    {-# INLINE chPokeByteOff #-}
+    {-# INLINE chAlignment #-}
+    chSizeOf _  _ = calcSize $ zip sizes aligns
         where sizes  = (word8s:gsizeOfSum' (undefined :: Rep a p):[])
               aligns = (word8a:alignOfSum' (undefined :: Rep a p):[])
               word8s = sizeOf    (undefined :: Word8)
-              word8a = alignment (undefined :: Word8)
-    
-    chAlignment _ = calcAlignment $ (word8a:align:[])
+              word8a = alignment (undefined :: Word8) 
+    chAlignment _ _  = calcAlignment $ (word8a:align:[])
         where align  = alignOfSum' (undefined :: Rep a p)
               word8a = alignment   (undefined :: Word8)
-    chPeekByteOff ptr off = do
+    chPeekByteOff _ ptr off = do
+        let proxy = (Proxy :: Proxy True)
         choice <- peekByteOff ptr off :: IO Word8
-        to <$> gpeekByteOffSum' (fromIntegral choice) ptr (off + chAlignment @True (undefined :: a))
-    chPokeByteOff ptr off v = do
+        to <$> gpeekByteOffSum' (fromIntegral choice) ptr (off + chAlignment proxy (undefined :: a))
+    chPokeByteOff _ ptr off v = do
+        let proxy = (Proxy :: Proxy True)
         pokeByteOff ptr off (internalTagValue v - 1)
-        gpokeByteOffSum' ptr (off + chAlignment @True v) (from v)
-    
+        gpokeByteOffSum' ptr (off + chAlignment proxy v) (from v)
+
+-- | Implementation for the non-sum types. 
 instance (ConstraintsAll a, IsSumType (Rep a) ~ False) => GStorableChoice' False a where
-    chSizeOf    _ = internalSizeOf    (undefined :: Rep a p)
-    chAlignment _ = internalAlignment (undefined :: Rep a p)
-    chPeekByteOff ptr offset = to <$> internalPeekByteOff ptr offset
-    chPokeByteOff ptr offset x = internalPokeByteOff ptr offset (from x)
+    {-# INLINE chSizeOf #-}
+    {-# INLINE chPeekByteOff #-}
+    {-# INLINE chPokeByteOff #-}
+    {-# INLINE chAlignment #-}
+    chSizeOf    _ _ = internalSizeOf    (undefined :: Rep a p)
+    chAlignment _ _ = internalAlignment (undefined :: Rep a p)
+    chPeekByteOff _ ptr offset = to <$> internalPeekByteOff ptr offset
+    chPokeByteOff _ ptr offset x = internalPokeByteOff ptr offset (from x)
 
 
 type ConstraintsAll       a = (ConstraintsSize a, ConstraintsPeek a)
@@ -285,25 +325,39 @@ type ConstraintsSize      a = ConstraintsSA' (IsSumType (Rep a)) a
 type ConstraintsPeek      a = ConstraintsP'  (IsSumType (Rep a)) a
 type ConstraintsPoke      a = ConstraintsP'  (IsSumType (Rep a)) a
 
-
+-- | Constrains for sizeof and alignment, either for sum or non-sum types.
 type family ConstraintsSA' (t :: Bool) a where
     ConstraintsSA' True  a = (Generic a, GStorableSum' (Rep a))
     ConstraintsSA' False a = (Generic a, GStorable'    (Rep a))
 
+-- | Constrains for peek and poke operations, either for sum or non-sum types.
 type family ConstraintsP' (t :: Bool) a where
     ConstraintsP' True   a = ( Generic a, GStorableSum' (Rep a))
     ConstraintsP' False  a = ( KnownNat (NoFields (Rep a)), Generic a, GStorable' (Rep a))
 
+-- | Get the tag value from the generic representation.
+internalTagValue :: ( KnownNat (SumArity (Rep a))
+                    , GStorableSum' (Rep a), Generic a)
+                 => a -> Word8
+internalTagValue (a :: a) = seeFirstByte' (from a) (sumArity (undefined :: Rep a p))
+
+-- | Work on the sum type.
 class GStorableSum' f where
     seeFirstByte'    :: f p -> Int -> Word8
     -- | The size of the biggest subtree
     gsizeOfSum'      :: f p -> Int
     -- | Alignment of the biggest subtree
     alignOfSum'      :: f p -> Int
+    -- | Peek the type based on the tag.
     gpeekByteOffSum' :: Int -> Ptr b -> Int -> IO (f p)
     gpokeByteOffSum' ::        Ptr b -> Int -> f p -> IO ()
 
 instance (GStorableSum' f) => GStorableSum' (M1 D t f) where
+    {-# INLINE seeFirstByte'      #-}
+    {-# INLINE gsizeOfSum'        #-}
+    {-# INLINE alignOfSum'        #-}
+    {-# INLINE gpeekByteOffSum'   #-}
+    {-# INLINE gpokeByteOffSum'   #-}
     seeFirstByte'    (M1 v) acc = seeFirstByte' v acc
     gsizeOfSum'      (M1 v)     = gsizeOfSum' v
     alignOfSum'      (M1 v)     = alignOfSum' v
@@ -311,6 +365,11 @@ instance (GStorableSum' f) => GStorableSum' (M1 D t f) where
     gpokeByteOffSum'    ptr off (M1 v) =        gpokeByteOffSum'    ptr off v
 
 instance (KnownNat (NoFields f), GStorable' f, GStorableSum' f) => GStorableSum' (M1 C t f) where
+    {-# INLINE seeFirstByte'      #-}
+    {-# INLINE gsizeOfSum'        #-}
+    {-# INLINE alignOfSum'        #-}
+    {-# INLINE gpeekByteOffSum'   #-}
+    {-# INLINE gpokeByteOffSum'   #-}
     seeFirstByte' (M1 v) acc = fromIntegral acc
     gsizeOfSum'   (M1 v)     = internalSizeOf    v
     alignOfSum'   (M1 v)     = internalAlignment v
@@ -319,6 +378,11 @@ instance (KnownNat (NoFields f), GStorable' f, GStorableSum' f) => GStorableSum'
 
 instance ( KnownNat (SumArity g), KnownNat (SumArity f)
          , GStorableSum' f, GStorableSum' g) => GStorableSum' (f :+: g) where
+    {-# INLINE seeFirstByte'      #-}
+    {-# INLINE gsizeOfSum'        #-}
+    {-# INLINE alignOfSum'        #-}
+    {-# INLINE gpeekByteOffSum'   #-}
+    {-# INLINE gpokeByteOffSum'   #-}
     seeFirstByte' (L1 l) acc = seeFirstByte' l $ acc - (sumArity (undefined :: g p))
     seeFirstByte' (R1 r) acc = seeFirstByte' r   acc
     gsizeOfSum'   _ = max (gsizeOfSum' (undefined :: f p)) (gsizeOfSum' (undefined :: g p))
@@ -331,11 +395,11 @@ instance ( KnownNat (SumArity g), KnownNat (SumArity f)
     gpokeByteOffSum'        ptr off (L1 v) = gpokeByteOffSum' ptr off v
 
 instance (GStorableSum' f) => GStorableSum' (M1 S t f) where
-    seeFirstByte'    (M1 v) acc = seeFirstByte' v acc
-    gsizeOfSum'      (M1 v)     = error "Shouldn't be here"
-    alignOfSum'      (M1 v)     = error "Shouldn't be here"
-    gpeekByteOffSum' _ _ _      = error "Shouldn't be here"
-    gpokeByteOffSum' _ _ _      = error "Shouldn't be here"
+    seeFirstByte'    _   _ = error "Shouldn't be here"
+    gsizeOfSum'      _     = error "Shouldn't be here"
+    alignOfSum'      _     = error "Shouldn't be here"
+    gpeekByteOffSum' _ _ _ = error "Shouldn't be here"
+    gpokeByteOffSum' _ _ _ = error "Shouldn't be here"
 
 
 instance GStorableSum' (f :*: g) where
@@ -359,17 +423,10 @@ instance GStorableSum' (U1) where
     gpeekByteOffSum' _ _ _ = undefined
     gpokeByteOffSum' _ _ _ = undefined
 
-instance (TypeError (Text "Haha!")) => GStorableSum' (V1) where
+instance GStorableSum' (V1) where
     seeFirstByte' _ _ = undefined
     gsizeOfSum'   _   = undefined
     alignOfSum'   _   = undefined
     gpeekByteOffSum' _ _ _ = undefined
     gpokeByteOffSum' _ _ _ = undefined
-
-
-internalTagValue :: ( KnownNat (SumArity (Rep a))
-                    , GStorableSum' (Rep a), Generic a)
-                 => a -> Word8
-internalTagValue (a :: a) = seeFirstByte' (from a) (sumArity (undefined :: Rep a p))
-
-
+#endif

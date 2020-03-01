@@ -37,12 +37,27 @@ matrix:
     - compiler: "ghc-8.2.1"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.2.1], sources: [hvr-ghc]}}
+    - compiler: "ghc-8.2.1 sumtypes"
+      env: SUMTYPES=-f sumtypes
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.2.1], sources: [hvr-ghc]}}
     - compiler: "ghc-8.4.1"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.1], sources: [hvr-ghc]}}
     - compiler: "ghc-8.4.2"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.2], sources: [hvr-ghc]}}
+    - compiler: "ghc-8.6.4"
+    # env: TEST=--disable-tests BENCH=--disable-benchmarks
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.6.4], sources: [hvr-ghc]}}
+    - compiler: "ghc-8.8.1"
+    # env: TEST=--disable-tests BENCH=--disable-benchmarks
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.8.1], sources: [hvr-ghc]}}
+    - compiler: "ghc-8.6.4 sumtypes"
+      env: SUMTYPES=-f sumtypes
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.6.4], sources: [hvr-ghc]}}
+    - compiler: "ghc-8.8.1 sumtypes"
+      env: SUMTYPES=-f sumtypes
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.8.1], sources: [hvr-ghc]}}
     - compiler: "ghc-head"
       env: CABALVER=head GHCVER=head
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-head], sources: [hvr-ghc]}}
@@ -80,7 +95,7 @@ install:
       (cd "." && autoreconf -i);
     fi
   - rm -f cabal.project.freeze
-  - cabal new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all
+  - cabal new-build -w ${HC} ${SUMTYPES} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all
   - cabal new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all
   - rm -rf .ghc.environment.* "."/dist
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
@@ -102,8 +117,8 @@ script:
   - if $INSTALLED; then echo cabal new-build -w ${HC} --disable-tests --disable-benchmarks $(${HCPKG} list --global --simple-output --names-only | sed 's/\([a-zA-Z0-9-]\{1,\}\) */--constraint="\1 installed" /g') all | sh; else echo "Not building with installed constraints"; fi
 
   # build & run tests, build benchmarks
-  - cabal new-build -w ${HC} ${TEST} ${BENCH} all
-  - if [ "x$TEST" = "x--enable-tests" ]; then cabal new-test -w ${HC} ${TEST} ${BENCH} all; fi
+  - cabal new-build -w ${HC} ${SUMTYPES} ${TEST} ${BENCH} all
+  - if [ "x$TEST" = "x--enable-tests" ]; then cabal new-test -w ${HC} ${SUMTYPES} ${TEST} ${BENCH} all; fi
 
   # cabal check
   - (cd derive-storable-* && cabal check)

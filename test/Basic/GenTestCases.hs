@@ -8,7 +8,7 @@ sample1 = "C1 = Int32 Int32 Int8"
 sample2 = "C2 = C1 Int8"
 sample3 = "C3 = Int8 | Int16 Int32"
 
-data Info = Info String [[String]] deriving (Show)
+data Info = Info String [[String]] Bool deriving (Show)
 
 
 getSums :: [String] -> [[String]]
@@ -21,8 +21,9 @@ getSums strs = go strs [] []
 -- Parses the text.
 getInfo :: String -> Maybe Info
 getInfo str = case words str of
-    (type_name:"=":f1:fields) -> Just $ Info type_name (getSums $ f1:fields)
-    [type_name] -> Just $ Info type_name []
+    (('*':type_name):"=":f1:fields) -> Just $ Info type_name (getSums $ f1:fields) True
+    (type_name:"=":f1:fields)     -> Just $ Info type_name (getSums $ f1:fields) False
+    [type_name] -> Just $ Info type_name [] False
     otherwise   -> Nothing
 
 -------------
@@ -46,7 +47,7 @@ instance Show HSStruct where
               next_fn ix fields = concat [replicate (length name + 6) ' ',"| ", name, s_ix ix, " ", concat $ intersperse " " fields, "\n"]
 
 infoToHSStruct :: Info -> HSStruct
-infoToHSStruct (Info name types) = HSStruct name hs_types
+infoToHSStruct (Info name types _) = HSStruct name hs_types
     where hs_types = map (map (\t -> (t, t `elem` hs_prims))) types
 
 s_ix      ix  = if ix > 0 then '_':show ix else ""
@@ -135,6 +136,7 @@ genFFI (HSStruct name types) = concat [new_lines, fields_line, offsets_lines, si
 
 headerHS = ["{-# LANGUAGE ForeignFunctionInterface #-}"
            ,"{-# LANGUAGE CApiFFI #-}"
+           ,"{-# LANGUAGE CPP     #-}"
            ,"{-# LANGUAGE DeriveGeneric #-}"
            ,"{-# LANGUAGE DeriveAnyClass #-}"
            ,"{-# LANGUAGE FlexibleContexts #-}"
@@ -267,7 +269,7 @@ instance Show CStruct where
 
 
 infoToCStruct :: Info -> CStruct
-infoToCStruct (Info name field_names) = CStruct name $ map types_names field_names
+infoToCStruct (Info name field_names _) = CStruct name $ map types_names field_names
     where types_names tps = zip (c_types tps) names
           c_types tps = map (\n -> (toC n, (toC n) `elem` c_prims) ) tps
           names   = map return ['a'..'z']
@@ -395,8 +397,9 @@ headerC = ["#include <stddef.h>"
 -- Hspec --
 -----------
 
-headerTest = ["{-# LANGUAGE ScopedTypeVariables #-}"
-              ,"{-# LANGUAGE FlexibleContexts#-}"
+headerTest =  ["{-# LANGUAGE ScopedTypeVariables #-}"
+              ,"{-# LANGUAGE FlexibleContexts    #-}"
+              ,"{-# LANGUAGE CPP                 #-}"
               ,"module Main where"
               ,""
               ,""
@@ -439,6 +442,18 @@ genTests types = (++) fst_line $ concat $ map ("    "++) $ concat [sizes_lines, 
           off_lines    = ("describe \"Test for same offsets\" $ do\n" ): (map (\t -> "    " ++ off t) types)
           fields_lines = ("describe \"Test for same fields\" $ do\n" ): (map (\t -> "    " ++ fields t) types)
 
+genTestsS :: [String] -> String
+genTestsS types = concat $ map ("    "++) $ concat [sizes_lines, aligns_lines, off_lines, fields_lines]
+    where fst_line  = "main = hspec $ do\n"
+          size  n   = concat ["it \"", n, "\" $ property $ (same_size      :: ", n," -> Expectation)\n"]
+          align n   = concat ["it \"", n, "\" $ property $ (same_alignment :: ", n," -> Expectation)\n"]
+          off   n   = concat ["it \"", n, "\" $ property $ (same_offsets   :: ", n," -> Expectation)\n"]
+          fields n  = concat ["it \"", n, "\" $ property $ (same_fields    :: ", n," -> Expectation)\n"]
+          sizes_lines  = ("describe \"Test for same size - sums\" $ do\n" ): (map (\t -> "    " ++ size t) types)
+          aligns_lines = ("describe \"Test for same alignment - sums\" $ do\n" ): (map (\t -> "    " ++ align t) types)
+          off_lines    = ("describe \"Test for same offsets - sums\" $ do\n" ): (map (\t -> "    " ++ off t) types)
+          fields_lines = ("describe \"Test for same fields - sums\" $ do\n" ): (map (\t -> "    " ++ fields t) types)
+
 -- -------
 -- -------
 -- 
@@ -457,40 +472,45 @@ hs_prims = ["Int64", "Int32", "Int16", "Int8", "Double", "Float"]
 
 
 -- Generates C structs and related functions
-stuffC sample = do
-    let info = getInfo sample
-        c_struct = infoToCStruct <$> info
-        c_cons  = genConstructor <$> c_struct
-        c_checkOffs = genCheckOffsets   <$> c_struct
-        c_checkFields = genCheckFields  <$> c_struct
-        c_size        = genGetSize      <$> c_struct
-        c_alignment   = genGetAlignment <$> c_struct
-        c_poke        = genPoke <$> c_struct
-    concat <$> sequence [show <$> c_struct, c_cons, c_poke, c_checkOffs, c_checkFields, c_size, c_alignment] 
+stuffC info = do
+    let c_struct = infoToCStruct info
+        c_cons  = genConstructor c_struct
+        c_checkOffs = genCheckOffsets   c_struct
+        c_checkFields = genCheckFields  c_struct
+        c_size        = genGetSize      c_struct
+        c_alignment   = genGetAlignment c_struct
+        c_poke        = genPoke c_struct
+    concat [show c_struct, c_cons, c_poke, c_checkOffs, c_checkFields, c_size, c_alignment] 
 
 -- Generates Haskell datatypes and related instances
-stuffHS sample = do
-    let info = getInfo sample
-        hs_struct = infoToHSStruct <$> info 
-        datatype  = show <$> hs_struct
-        instanced = genCheckable <$> hs_struct
-        arbitrary = genArbitrary <$> hs_struct
-        ffi       = genFFI <$> hs_struct 
-    concat <$> sequence [datatype, instanced, arbitrary, ffi]
+stuffHS info = do
+    let hs_struct = infoToHSStruct info 
+        datatype  = show hs_struct
+        instanced = genCheckable hs_struct
+        arbitrary = genArbitrary hs_struct
+        ffi       = genFFI hs_struct 
+    concat [datatype, instanced, arbitrary, ffi]
 
+wrapInIfdefs :: String -> String
+wrapInIfdefs s = concat ["#ifdef GSTORABLE_SUMTYPES\n", s, "#endif"]
 
 -- Generated the files.
 genFiles filename = do
    file <- readFile filename
    let cases = lines file
+       infos = [i | Just i <- map getInfo cases]
+       infosP = filter (\(Info _ _ t) -> not t) infos
+       infosS = filter (\(Info _ _ t) ->     t) infos
        header_hs   = concat $ map (++"\n") headerHS
        header_test = concat $ map (++"\n") headerTest
        header_c    = concat $ map (++"\n") headerC
-       hs_code   = concat $ [ code | Just code <- map stuffHS cases]
-       test_code = genTests [ t | Just (Info t _) <- map getInfo cases]
-       c_code    = concat $ [ code | Just code <- map stuffC  cases]
-   writeFile "MemoryCSpec.hs" (header_test ++ test_code)
-   writeFile "TestCases.hs" (header_hs ++ hs_code)
+       hs_codeP   = concat $ map stuffHS infosP
+       hs_codeS   = concat $ map stuffHS infosS
+       test_codeP = genTests  $ map (\(Info n _ _) -> n) infosP
+       test_codeS = genTestsS $ map (\(Info n _ _) -> n) infosS
+       c_code     = concat $ map stuffC  infos
+   writeFile "MemoryCSpec.hs" (header_test ++ test_codeP ++ wrapInIfdefs test_codeS)
+   writeFile "TestCases.hs"   (header_hs   ++ hs_codeP   ++ wrapInIfdefs hs_codeS)
    writeFile "cbits/TestCases.c"  (header_c ++ c_code)
 
 -- Default usage

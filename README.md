@@ -4,10 +4,25 @@
 
 The `derive-storable` package allows you to automatically generate Storable instances for your datatypes. It uses GHC.Generics, which allows the coders to derive certain instances automatically. To derive a (G)Storable instance, the data-type has to:
 
-* have only one constructor.
+* ~~have only one constructor~~ There is now a `sumtypes` option for data-types with multiple constructors. These data-types shouldn't be self (or mutually) recursive!
 * all fields of the constructor need to be GStorable.
 * implement a Generic instance (`derive (Generic)`)
 
+### Memory layout for sum types
+
+Sum types have the following memory layout. 
+
+```c
+struct datatype {
+    unsigned char tag;
+    union { 
+        constructor1 a;
+        constructor2 b;
+        ...
+    } val;
+};
+
+```
 
 ### Note on performance
 
