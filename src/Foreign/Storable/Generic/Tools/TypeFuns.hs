@@ -11,7 +11,7 @@ module Foreign.Storable.Generic.Tools.TypeFuns where
 
 import Data.Proxy
 import GHC.Generics
-import GHC.TypeNats
+import GHC.TypeLits
 
 type family SumArity (arg :: * -> *) where
     SumArity (M1 C _ t) = 1
