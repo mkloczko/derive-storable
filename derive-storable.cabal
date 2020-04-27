@@ -29,7 +29,6 @@ Flag sumtypes
 library
   exposed-modules:     Foreign.Storable.Generic 
                      , Foreign.Storable.Generic.Internal
-                     , Foreign.Storable.Generic.Instances       
                      , Foreign.Storable.Generic.Tools
                      , Foreign.Storable.Generic.Tools.TypeFuns
   build-depends:       base >=4.8 && < 5
