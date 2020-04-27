@@ -53,7 +53,6 @@ test-suite c_alignment
   c-sources:           test/Basic/cbits/TestCases.c 
   main-is:             MemoryCSpec.hs
   other-modules:       Foreign.Storable.Generic
-                     , Foreign.Storable.Generic.Instances
                      , Foreign.Storable.Generic.Internal
                      , Foreign.Storable.Generic.Tools
                      , Foreign.Storable.Generic.Tools.TypeFuns

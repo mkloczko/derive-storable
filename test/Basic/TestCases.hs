@@ -2,7 +2,7 @@
 {-# LANGUAGE CApiFFI #-}
 {-# LANGUAGE CPP     #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
@@ -24,7 +24,6 @@ import Foreign.Marshal.Array (mallocArray, pokeArray)
 
 import Foreign.Storable.Generic.Tools
 import Foreign.Storable.Generic.Internal
-import Foreign.Storable.Generic.Instances
 import Data.Int
 import Control.Monad (sequence, liftM)
 import System.Exit
@@ -60,7 +59,7 @@ class SumOffsets' f where
 instance (SumOffsets' f) => SumOffsets' (M1 D t f) where
     sumOffsets' (M1 v) = sumOffsets' v
 
-instance (GStorable' f, SumOffsets' f) => SumOffsets' (M1 C t f) where
+instance (GStorable f, SumOffsets' f) => SumOffsets' (M1 C t f) where
     sumOffsets' (M1 v) = internalOffsets v
 
 instance (SumOffsets' f, SumOffsets' g) => SumOffsets' (f :+: g) where
@@ -79,11 +78,12 @@ instance SumOffsets' (V1) where
     sumOffsets' _ = undefined
 
 
-goffsets :: (SumOffsets' (Rep a), GStorable a, Generic a) => a -> [Int16]
+goffsets :: (SumOffsets' (Rep a), Storable a, Generic a) => a -> [Int16]
 goffsets v = map fromIntegral $ sumOffsets' (from v)
 
 data C0 = C0
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C0
 
 instance Checkable C0 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC0 ptr1 ptr2
@@ -104,7 +104,8 @@ foreign import ccall getSizeC0 :: IO Int16
 foreign import ccall getAlignmentC0 :: IO Int16
 
 data C1 = C1 Int32 Int32
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C1
 
 instance Checkable C1 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC1 ptr1 ptr2
@@ -125,7 +126,8 @@ foreign import ccall getSizeC1 :: IO Int16
 foreign import ccall getAlignmentC1 :: IO Int16
 
 data C2 = C2 Int32 C0 Int16 Int8
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C2
 
 instance Checkable C2 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC2 ptr1 ptr2
@@ -148,7 +150,8 @@ foreign import ccall getSizeC2 :: IO Int16
 foreign import ccall getAlignmentC2 :: IO Int16
 
 data C3 = C3 Int32 Int8 Int16
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C3
 
 instance Checkable C3 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC3 ptr1 ptr2
@@ -169,7 +172,8 @@ foreign import ccall getSizeC3 :: IO Int16
 foreign import ccall getAlignmentC3 :: IO Int16
 
 data C4 = C4 Int32 Int8 Int8
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C4
 
 instance Checkable C4 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC4 ptr1 ptr2
@@ -190,7 +194,8 @@ foreign import ccall getSizeC4 :: IO Int16
 foreign import ccall getAlignmentC4 :: IO Int16
 
 data C5 = C5 C0 C0 Int32 Int16 Int8 Int8 Int8
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C5
 
 instance Checkable C5 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC5 ptr1 ptr2
@@ -215,7 +220,8 @@ foreign import ccall getSizeC5 :: IO Int16
 foreign import ccall getAlignmentC5 :: IO Int16
 
 data C6 = C6 Int64 Int8 Int64
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C6
 
 instance Checkable C6 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC6 ptr1 ptr2
@@ -236,7 +242,8 @@ foreign import ccall getSizeC6 :: IO Int16
 foreign import ccall getAlignmentC6 :: IO Int16
 
 data C7 = C7 C1 Int32
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C7
 
 instance Checkable C7 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC7 ptr1 ptr2
@@ -259,7 +266,8 @@ foreign import ccall getSizeC7 :: IO Int16
 foreign import ccall getAlignmentC7 :: IO Int16
 
 data C8 = C8 C2 Int8 C4
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C8
 
 instance Checkable C8 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC8 ptr1 ptr2
@@ -284,7 +292,8 @@ foreign import ccall getSizeC8 :: IO Int16
 foreign import ccall getAlignmentC8 :: IO Int16
 
 data C9 = C9 C5 Int8 Int8 Int8
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C9
 
 instance Checkable C9 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC9 ptr1 ptr2
@@ -307,7 +316,8 @@ foreign import ccall getSizeC9 :: IO Int16
 foreign import ccall getAlignmentC9 :: IO Int16
 
 data C10 = C10 C8 Int64 C1
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C10
 
 instance Checkable C10 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC10 ptr1 ptr2
@@ -332,7 +342,8 @@ foreign import ccall getSizeC10 :: IO Int16
 foreign import ccall getAlignmentC10 :: IO Int16
 
 data C11 = C11 C10 C10
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C11
 
 instance Checkable C11 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC11 ptr1 ptr2
@@ -357,7 +368,8 @@ foreign import ccall getSizeC11 :: IO Int16
 foreign import ccall getAlignmentC11 :: IO Int16
 
 data C12 = C12 Int64 Int64 Int64 Int64
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C12
 
 instance Checkable C12 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC12 ptr1 ptr2
@@ -378,7 +390,8 @@ foreign import ccall getSizeC12 :: IO Int16
 foreign import ccall getAlignmentC12 :: IO Int16
 
 data C13 = C13 C12 C12 C0 C12 C12
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C13
 
 instance Checkable C13 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC13 ptr1 ptr2
@@ -409,7 +422,8 @@ foreign import ccall getSizeC13 :: IO Int16
 foreign import ccall getAlignmentC13 :: IO Int16
 
 data C14 = C14 C13 C13 C13 C13 Int8
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C14
 
 instance Checkable C14 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC14 ptr1 ptr2
@@ -438,7 +452,8 @@ foreign import ccall getSizeC14 :: IO Int16
 foreign import ccall getAlignmentC14 :: IO Int16
 
 data C15 = C15 C12 C14
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C15
 
 instance Checkable C15 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC15 ptr1 ptr2
@@ -463,7 +478,8 @@ foreign import ccall getSizeC15 :: IO Int16
 foreign import ccall getAlignmentC15 :: IO Int16
 
 data C16 = C16 C10 C0 C15 C7
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C16
 
 instance Checkable C16 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC16 ptr1 ptr2
@@ -492,7 +508,8 @@ foreign import ccall getSizeC16 :: IO Int16
 foreign import ccall getAlignmentC16 :: IO Int16
 
 data C17 = C17 Float Double Float
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C17
 
 instance Checkable C17 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC17 ptr1 ptr2
@@ -513,7 +530,8 @@ foreign import ccall getSizeC17 :: IO Int16
 foreign import ccall getAlignmentC17 :: IO Int16
 
 data C18 = C18 Float Float Double Float
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C18
 
 instance Checkable C18 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC18 ptr1 ptr2
@@ -534,7 +552,8 @@ foreign import ccall getSizeC18 :: IO Int16
 foreign import ccall getAlignmentC18 :: IO Int16
 
 data C19 = C19 C17 Float Double
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C19
 
 instance Checkable C19 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC19 ptr1 ptr2
@@ -557,7 +576,8 @@ foreign import ccall getSizeC19 :: IO Int16
 foreign import ccall getAlignmentC19 :: IO Int16
 
 data C20 = C20 Double C18 Double C19
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically C20
 
 instance Checkable C20 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsC20 ptr1 ptr2
@@ -584,7 +604,8 @@ foreign import ccall getAlignmentC20 :: IO Int16
 #ifdef GSTORABLE_SUMTYPES
 data S0 = S0_1 Int8
         | S0_2 Int16
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically S0
 
 instance Checkable S0 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsS0 ptr1 ptr2
@@ -615,7 +636,8 @@ foreign import ccall getAlignmentS0 :: IO Int16
 data S1 = S1_1 Int32 Int8
         | S1_2 Double Int32 Int8 Int8
         | S1_3 Float
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically S1
 
 instance Checkable S1 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsS1 ptr1 ptr2
@@ -653,7 +675,8 @@ foreign import ccall getAlignmentS1 :: IO Int16
 data S2 = S2_1 C13 Int8
         | S2_2 C2 C1
         | S2_3 C0
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically S2
 
 instance Checkable S2 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsS2 ptr1 ptr2
@@ -699,7 +722,8 @@ foreign import ccall getAlignmentS2 :: IO Int16
 data S3 = S3_1 S1
         | S3_2 S2
         | S3_3 Int8
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically S3
 
 instance Checkable S3 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsS3 ptr1 ptr2
@@ -742,7 +766,8 @@ data S4 = S4_1 C0
         | S4_2 C0
         | S4_3 C0
         | S4_4 C1
-    deriving (Show, Eq, Generic, GStorable)
+    deriving (Show, Eq, Generic)
+    deriving Storable via Generically S4
 
 instance Checkable S4 where
     checkFields    ptr1 ptr2 = (==1) <$> checkFieldsS4 ptr1 ptr2
