@@ -1,29 +1,26 @@
-{-|
-Module      : Foreign.Storable.Generic
-Copyright   : (c) Mateusz Kłoczko, 2016
-License     : MIT
-Maintainer  : mateusz.p.kloczko@gmail.com
-Stability   : experimental
-Portability : portable
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 
+-- |
+-- Module      : Foreign.Storable.Generic
+-- Copyright   : (c) Mateusz Kłoczko, 2016
+-- License     : MIT
+-- Maintainer  : mateusz.p.kloczko@gmail.com
+-- Stability   : experimental
+-- Portability : portable
+module Foreign.Storable.Generic
+  ( Storable (..),
+    Generically (..),
+  )
+where
 
+import Foreign.Storable (Storable (..))
+import Foreign.Storable.Generic.Internal (Generically (..))
 
--}
-
-{-#LANGUAGE FlexibleInstances #-}
-{-#LANGUAGE FlexibleContexts #-}
-{-#LANGUAGE TypeOperators #-}
-{-#LANGUAGE ScopedTypeVariables #-}
-{-#LANGUAGE UndecidableInstances #-}
-
-
-module Foreign.Storable.Generic (GStorable (..), Storable(..)) where
-
-
-
-import Foreign.Storable (Storable(..))
-
-import Foreign.Storable.Generic.Internal (GStorable (..))
+{-
 import Foreign.Storable.Generic.Instances
 
 
@@ -38,5 +35,4 @@ instance {-# OVERLAPS #-} (GStorable a) => (Storable a) where
     peekByteOff = gpeekByteOff
     {-# INLINE pokeByteOff #-}
     pokeByteOff = gpokeByteOff
-
-
+-}
