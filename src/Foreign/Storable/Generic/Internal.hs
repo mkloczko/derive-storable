@@ -25,6 +25,7 @@ Portability : portable
 module Foreign.Storable.Generic.Internal (
      GStorable'(..),
      GStorable (..),
+     Storable (..),
 #ifdef GSTORABLE_SUMTYPES
      GStorableSum'(..),
      GStorableChoice'(..),
@@ -130,22 +131,21 @@ instance (KnownNat (NoFields f), KnownNat (NoFields g)
     -- Concatenate the lists.
     glistAlignment' _ = glistAlignment' (undefined :: f a) ++ glistAlignment' (undefined :: g a)
 
-instance (GStorable a) => GStorable' (K1 i a) where
+instance (Storable a) => GStorable' (K1 i a) where
     {-# INLINE gpeekByteOff' #-}
-    gpeekByteOff' offsets ix ptr offset = K1 <$> gpeekByteOff ptr (off1 + offset)
+    gpeekByteOff' offsets ix ptr offset = K1 <$> peekByteOff ptr (off1 + offset)
         where off1 = inline (offsets !! ix)
     {-# INLINE gpokeByteOff' #-}
-    gpokeByteOff' offsets ix ptr offset (K1 x) = gpokeByteOff ptr (off1 + offset) x
+    gpokeByteOff' offsets ix ptr offset (K1 x) = pokeByteOff ptr (off1 + offset) x
         where off1 = inline (offsets !! ix) 
 
 
     -- When the constructor is used, return the size of 
     -- the constructed type in a list.
-    glistSizeOf' _ = [gsizeOf (undefined :: a)]
+    glistSizeOf' _ = [sizeOf (undefined :: a)]
     -- When the constructor is used, return the alignment of 
     -- the constructed type in a list.
-    glistAlignment' _ = [galignment (undefined :: a)]  
-
+    glistAlignment' _ = [alignment (undefined :: a)]  
 
 #ifndef GSTORABLE_SUMTYPES
 type SumTypesDisabled = Text "By default sum types are not supported by GStorable instances." :$$: Text "You can pass a 'sumtypes' flag through 'cabal new-configure' to enable them." :$$: Text "In case of trouble, one can use '-DGSTORABLE_SUMTYPES' ghc flag instead." 
@@ -429,3 +429,16 @@ instance GStorableSum' (V1) where
     gpeekByteOffSum' _ _ _ = undefined
     gpokeByteOffSum' _ _ _ = undefined
 #endif
+
+------Association to Storable class-------
+
+instance {-# OVERLAPS #-} (GStorable a) => (Storable a) where
+    {-# INLINE sizeOf #-}
+    sizeOf      = gsizeOf
+    {-# INLINE alignment #-}
+    alignment   = galignment
+    {-# INLINE peekByteOff #-}
+    peekByteOff = gpeekByteOff
+    {-# INLINE pokeByteOff #-}
+    pokeByteOff = gpokeByteOff
+

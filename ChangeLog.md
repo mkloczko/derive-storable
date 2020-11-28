@@ -1,5 +1,9 @@
 # Revision history for derive-storable
 
+## 0.3.0.0  -- 2020-03-01
+
+* Removed instances module. A breaking change therefore bump to 0.3.
+
 ## 0.2.0.0  -- 2020-03-01
 
 * Added support for sum types enabled through additional option.

@@ -1,6 +1,6 @@
 name:                derive-storable
 
-version:             0.2.0.0
+version:             0.3.0.0
 synopsis:            Derive Storable instances with GHC.Generics.           
 
 description:         Derive Storable instances with GHC.Generics. The derived Storable instances have the same alignment as C structs.
@@ -29,7 +29,6 @@ Flag sumtypes
 library
   exposed-modules:     Foreign.Storable.Generic 
                      , Foreign.Storable.Generic.Internal
-                     , Foreign.Storable.Generic.Instances       
                      , Foreign.Storable.Generic.Tools
                      , Foreign.Storable.Generic.Tools.TypeFuns
   build-depends:       base >=4.8 && < 5
@@ -54,7 +53,6 @@ test-suite c_alignment
   c-sources:           test/Basic/cbits/TestCases.c 
   main-is:             MemoryCSpec.hs
   other-modules:       Foreign.Storable.Generic
-                     , Foreign.Storable.Generic.Instances
                      , Foreign.Storable.Generic.Internal
                      , Foreign.Storable.Generic.Tools
                      , Foreign.Storable.Generic.Tools.TypeFuns
