@@ -1,5 +1,9 @@
 # Revision history for derive-storable
 
+## 0.3.0.1  -- 2020-04-13
+
+* Added a non-internal getFilling helper.
+
 ## 0.3.0.0  -- 2020-03-01
 
 * Removed instances module. A breaking change therefore bump to 0.3.
