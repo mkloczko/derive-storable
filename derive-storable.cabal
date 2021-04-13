@@ -1,7 +1,7 @@
 name:                derive-storable
 
-version:             0.3.0.0
-synopsis:            Derive Storable instances with GHC.Generics.           
+version:             0.3.0.1
+synopsis:            Derive Storable instances with GHC.Generics.
 
 description:         Derive Storable instances with GHC.Generics. The derived Storable instances have the same alignment as C structs.
 
