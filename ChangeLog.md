@@ -1,8 +1,9 @@
 # Revision history for derive-storable
 
-## 0.3.0.1  -- 2020-04-13
+## 0.3.1.0  -- 2021-04-13
 
-* Added a non-internal getFilling helper.
+* Added a non-internal getFilling helper [thanks to dpwiz](https://github.com/mkloczko/derive-storable/pull/8).
+
 
 ## 0.3.0.0  -- 2020-03-01
 

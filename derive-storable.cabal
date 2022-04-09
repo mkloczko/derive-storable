@@ -1,6 +1,6 @@
 name:                derive-storable
 
-version:             0.3.0.1
+version:             0.3.1.0
 synopsis:            Derive Storable instances with GHC.Generics.
 
 description:         Derive Storable instances with GHC.Generics. The derived Storable instances have the same alignment as C structs.
@@ -20,7 +20,7 @@ build-type:          Simple
 extra-source-files:  ChangeLog.md README.md
 
 cabal-version:       >=1.10
-tested-with:         GHC==8.2.2, GHC==8.4.2, GHC==8.6.4, GHC==8.8.1, GHC==8.10.4
+tested-with:         GHC==8.2.2, GHC==8.4.2, GHC==8.6.4, GHC==8.8.1, GHC==8.10.4, GHC==9.0.1, GHC==9.2.1
 
 Flag sumtypes
   Description:   Enable support for non-recursive sum types.
@@ -45,6 +45,9 @@ benchmark benchmark
   Main-is:             Main.hs
   build-depends:       base >= 4.8 && < 5, deepseq, criterion >= 1.1.0
                     ,  derive-storable 
+
+  if impl(ghc < 8.4)
+     build-depends: text < 1.2.5.0
 
 test-suite c_alignment
   type:                exitcode-stdio-1.0
